@@ -407,6 +407,25 @@ Only visible when Claude Code provides native `rate_limits.seven_day` data (Clau
 </details>
 
 <details>
+<summary><strong>Thinking</strong> - Shows extended-thinking on/off state and/or reasoning effort level when provided by Claude Code</summary>
+
+```json
+"thinking": {
+  "enabled": true,
+  "showEnabled": true,
+  "showEffort": true
+}
+```
+
+Set `showEnabled: false` to hide the `On`/`Off` state, or `showEffort: false` to hide the effort level. If both are true the two parts are joined with `·`; if only one is shown, no separator is rendered.
+
+**Display:** `✦ On · xhigh` (both shown) &#8226; `✦ On` (enabled only) &#8226; `✦ xhigh` (effort only)
+
+**Symbols:** `✦` Thinking (unicode) &#8226; `T` Thinking (text)
+
+</details>
+
+<details>
 <summary><strong>Tmux</strong> - Shows tmux session name and window info when in tmux</summary>
 
 ```json
@@ -788,6 +807,7 @@ Use `segment.part` to place individual pieces of a segment into separate cells w
 | `dir` | `value` |
 | `env` | `prefix`, `value` |
 | `agent` | `icon`, `name` |
+| `thinking` | `icon`, `enabled`, `effort` |
 
 Example, block segment with a progress bar, mirroring the context layout:
 

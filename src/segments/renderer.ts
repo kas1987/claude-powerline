@@ -1,4 +1,5 @@
 import type { ClaudeHookData } from "../utils/claude";
+import { getEffortLevel, getThinkingEnabled } from "../utils/claude";
 import type { PowerlineColors } from "../themes";
 import type { PowerlineConfig } from "../config/loader";
 import type { BlockInfo } from "./block";
@@ -113,6 +114,11 @@ export interface AgentSegmentConfig extends SegmentConfig {
   showLabel?: boolean;
 }
 
+export interface ThinkingSegmentConfig extends SegmentConfig {
+  showEnabled?: boolean;
+  showEffort?: boolean;
+}
+
 export type AnySegmentConfig =
   | SegmentConfig
   | DirectorySegmentConfig
@@ -127,7 +133,8 @@ export type AnySegmentConfig =
   | SessionIdSegmentConfig
   | EnvSegmentConfig
   | WeeklySegmentConfig
-  | AgentSegmentConfig;
+  | AgentSegmentConfig
+  | ThinkingSegmentConfig;
 
 export interface PowerlineSymbols {
   right: string;
@@ -163,6 +170,7 @@ export interface PowerlineSymbols {
   session_id: string;
   weekly_cost: string;
   agent: string;
+  thinking: string;
 }
 
 export interface SegmentData {
@@ -214,8 +222,7 @@ export class SegmentRenderer {
     const currentDir =
       worktreeOriginalCwd ??
       (hookData.workspace?.current_dir || hookData.cwd || "/");
-    const projectDir =
-      worktreeOriginalCwd ?? hookData.workspace?.project_dir;
+    const projectDir = worktreeOriginalCwd ?? hookData.workspace?.project_dir;
 
     const style = config?.style ?? (config?.showBasename ? "basename" : "full");
 
@@ -862,6 +869,31 @@ export class SegmentRenderer {
       text: `${iconPrefix}${body}`,
       bgColor: colors.agentBg,
       fgColor: colors.agentFg,
+    };
+  }
+
+  renderThinking(
+    hookData: ClaudeHookData,
+    colors: PowerlineColors,
+    config?: ThinkingSegmentConfig,
+  ): SegmentData | null {
+    const showEnabled = config?.showEnabled ?? true;
+    const showEffort = config?.showEffort ?? true;
+    if (!showEnabled && !showEffort) return null;
+
+    const enabled = showEnabled ? getThinkingEnabled(hookData) : null;
+    const level = showEffort ? getEffortLevel(hookData) : null;
+
+    const parts: string[] = [];
+    if (enabled !== null) parts.push(enabled ? "On" : "Off");
+    if (level) parts.push(level);
+    if (parts.length === 0) return null;
+
+    const iconPrefix = this.leadingIcon(this.symbols.thinking, config);
+    return {
+      text: `${iconPrefix}${parts.join(" · ")}`,
+      bgColor: colors.thinkingBg,
+      fgColor: colors.thinkingFg,
     };
   }
 }

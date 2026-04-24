@@ -19,6 +19,7 @@ import type {
   EnvSegmentConfig,
   WeeklySegmentConfig,
   AgentSegmentConfig,
+  ThinkingSegmentConfig,
 } from "./segments";
 import type { BlockInfo } from "./segments/block";
 import type { TodayInfo } from "./segments/today";
@@ -581,6 +582,14 @@ export class PowerlineRenderer {
       );
     }
 
+    if (segment.type === "thinking") {
+      return this.segmentRenderer.renderThinking(
+        hookData,
+        colors,
+        segment.config as ThinkingSegmentConfig,
+      );
+    }
+
     return null;
   }
 
@@ -716,6 +725,7 @@ export class PowerlineRenderer {
       session_id: symbolSet.session_id,
       weekly_cost: symbolSet.weekly_cost,
       agent: symbolSet.agent,
+      thinking: symbolSet.thinking,
     };
   }
 
@@ -794,6 +804,7 @@ export class PowerlineRenderer {
     const env = getSegmentColors("env");
     const weekly = getSegmentColors("weekly");
     const agent = getSegmentColors("agent");
+    const thinking = getSegmentColors("thinking");
 
     return {
       reset: colorSupport === "none" ? "" : RESET_CODE,
@@ -842,6 +853,9 @@ export class PowerlineRenderer {
       agentBg: agent.bg,
       agentFg: agent.fg,
       agentBold: agent.bold,
+      thinkingBg: thinking.bg,
+      thinkingFg: thinking.fg,
+      thinkingBold: thinking.bold,
       partFg: theme === "custom" ? this.resolvePartColors(convertHex) : {},
     };
   }
@@ -895,6 +909,8 @@ export class PowerlineRenderer {
         return colors.weeklyBg;
       case "agent":
         return colors.agentBg;
+      case "thinking":
+        return colors.thinkingBg;
       default:
         return colors.modeBg;
     }
@@ -932,6 +948,8 @@ export class PowerlineRenderer {
         return colors.weeklyBold;
       case "agent":
         return colors.agentBold;
+      case "thinking":
+        return colors.thinkingBold;
       default:
         return colors.modeBold;
     }

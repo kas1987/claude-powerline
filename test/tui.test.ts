@@ -54,6 +54,9 @@ const PLAIN_COLORS: PowerlineColors = {
   agentBg: "",
   agentFg: "",
   agentBold: false,
+  thinkingBg: "",
+  thinkingFg: "",
+  thinkingBold: false,
   partFg: {},
 };
 
@@ -446,6 +449,38 @@ describe("TUI Panel Rendering", () => {
       expect(result["git.icon"]).toBe(SYMBOLS.branch);
       expect(result["git.head"]).toContain(SYMBOLS.branch);
       expect(result["session"]).not.toContain(SYMBOLS.session_cost);
+    });
+
+    it("resolveSegments exposes thinking sub-parts (icon, enabled, effort) when data present, empty when absent", () => {
+      const config: PowerlineConfig = {
+        ...DEFAULT_CONFIG,
+        display: { ...DEFAULT_CONFIG.display, style: "tui" },
+      };
+
+      const withData = makeTuiData({
+        hookData: {
+          ...makeTuiData().hookData,
+          effort: { level: "xhigh" },
+          thinking: { enabled: true },
+        },
+      });
+      const { data: resultPresent } = resolveSegments(
+        withData,
+        mkCtx(config, withData),
+      );
+      expect(resultPresent["thinking.icon"]).toBe(SYMBOLS.thinking);
+      expect(resultPresent["thinking.enabled"]).toBe("On");
+      expect(resultPresent["thinking.effort"]).toBe("xhigh");
+
+      const absent = makeTuiData();
+      const { data: resultAbsent } = resolveSegments(
+        absent,
+        mkCtx(config, absent),
+      );
+      expect(resultAbsent["thinking"]).toBe("");
+      expect(resultAbsent["thinking.icon"]).toBe("");
+      expect(resultAbsent["thinking.enabled"]).toBe("");
+      expect(resultAbsent["thinking.effort"]).toBe("");
     });
   });
 });

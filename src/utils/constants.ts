@@ -37,6 +37,7 @@ export const SYMBOLS = {
   dir: "📁",
   activity: "⚡",
   agent: "◇",
+  thinking: "✦",
 } as const;
 
 export const BOX_CHARS = {
@@ -175,4 +176,5 @@ export const TEXT_SYMBOLS = {
   dir: "D",
   activity: "A",
   agent: "&",
+  thinking: "T",
 } as const;

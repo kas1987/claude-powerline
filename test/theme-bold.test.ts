@@ -34,6 +34,7 @@ function makeCustomTheme(overrides: Partial<ColorTheme> = {}): ColorTheme {
     env: { ...base },
     weekly: { ...base },
     agent: { ...base },
+    thinking: { ...base },
     ...overrides,
   };
 }

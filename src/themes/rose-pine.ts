@@ -16,6 +16,7 @@ export const rosePineTheme: ColorTheme = {
   env: { bg: "#21202e", fg: "#eb6f92" },
   weekly: { bg: "#21202e", fg: "#c4a7e7" },
   agent: { bg: "#2a273f", fg: "#c4a7e7" },
+  thinking: { bg: "#26223a", fg: "#c4a7e7" },
 };
 
 export const rosePineAnsi256Theme: ColorTheme = {
@@ -34,6 +35,7 @@ export const rosePineAnsi256Theme: ColorTheme = {
   env: { bg: "#303030", fg: "#ff5f87" },
   weekly: { bg: "#303030", fg: "#d787d7" },
   agent: { bg: "#4e4e4e", fg: "#d787d7" },
+  thinking: { bg: "#303030", fg: "#d787d7" },
 };
 
 export const rosePineAnsiTheme: ColorTheme = {
@@ -52,4 +54,5 @@ export const rosePineAnsiTheme: ColorTheme = {
   env: { bg: "#444444", fg: "#ff5f87" },
   weekly: { bg: "#444444", fg: "#ff87ff" },
   agent: { bg: "#666666", fg: "#ff87ff" },
+  thinking: { bg: "#444444", fg: "#ff87ff" },
 };

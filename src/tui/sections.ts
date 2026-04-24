@@ -25,6 +25,7 @@ import {
 } from "../utils/formatters";
 import { getBudgetStatus } from "../utils/budget";
 import { colorize, truncateAnsi } from "./primitives";
+import { getEffortLevel, getThinkingEnabled } from "../utils/claude";
 import { resolveIconVisibility } from "../utils/icon-visibility";
 
 export function resolveTitleToken(
@@ -426,6 +427,23 @@ export function collectFooterParts(
       ),
     );
   }
+
+  const thinkingSegConfig = config.display.lines
+    .map((line) => line.segments.thinking)
+    .find((t) => t?.enabled);
+  const thinkingBody = buildThinkingBody(data, thinkingSegConfig);
+  if (thinkingBody) {
+    const showThinkingIcon = resolveIconVisibility(config, "thinking");
+    parts.push(
+      colorize(
+        showThinkingIcon ? `${sym.thinking} ${thinkingBody}` : thinkingBody,
+        colors.thinkingFg,
+        reset,
+        colors.thinkingBold,
+      ),
+    );
+  }
+
   if (data.tmuxSessionId) {
     parts.push(
       colorize(
@@ -912,6 +930,55 @@ function formatAgentSegment(
   return parts.icon ? `${parts.icon} ${body}` : body;
 }
 
+function buildThinkingBody(
+  data: TuiData,
+  thinkingConfig: { showEnabled?: boolean; showEffort?: boolean } | undefined,
+): string {
+  const showEnabled = thinkingConfig?.showEnabled ?? true;
+  const showEffort = thinkingConfig?.showEffort ?? true;
+  if (!showEnabled && !showEffort) return "";
+
+  const enabled = showEnabled ? getThinkingEnabled(data.hookData) : null;
+  const level = showEffort ? getEffortLevel(data.hookData) : null;
+
+  const segments: string[] = [];
+  if (enabled !== null) segments.push(enabled ? "On" : "Off");
+  if (level) segments.push(level);
+  return segments.join(" · ");
+}
+
+function formatThinkingParts(
+  data: TuiData,
+  sym: SymbolSet,
+  thinkingConfig: { showEnabled?: boolean; showEffort?: boolean } | undefined,
+  iconVisible = true,
+): Record<string, string> {
+  const showEnabled = thinkingConfig?.showEnabled ?? true;
+  const showEffort = thinkingConfig?.showEffort ?? true;
+  const enabled = showEnabled ? getThinkingEnabled(data.hookData) : null;
+  const level = showEffort ? getEffortLevel(data.hookData) : null;
+
+  const enabledText = enabled === null ? "" : enabled ? "On" : "Off";
+  const effortText = level ?? "";
+  const hasAny = enabledText !== "" || effortText !== "";
+  return {
+    icon: hasAny && iconVisible ? sym.thinking : "",
+    enabled: enabledText,
+    effort: effortText,
+  };
+}
+
+function formatThinkingSegment(
+  data: TuiData,
+  sym: SymbolSet,
+  thinkingConfig: { showEnabled?: boolean; showEffort?: boolean } | undefined,
+  iconVisible = true,
+): string {
+  const body = buildThinkingBody(data, thinkingConfig);
+  if (!body) return "";
+  return iconVisible ? `${sym.thinking} ${body}` : body;
+}
+
 function formatTmuxParts(data: TuiData): Record<string, string> {
   if (!data.tmuxSessionId) return { label: "", value: "" };
   return { label: "tmux", value: data.tmuxSessionId };
@@ -1045,6 +1112,7 @@ export function resolveSegments(
     directory: resolveIconVisibility(config, "directory"),
     version: resolveIconVisibility(config, "version"),
     agent: resolveIconVisibility(config, "agent"),
+    thinking: resolveIconVisibility(config, "thinking"),
   };
 
   // Model
@@ -1306,6 +1374,26 @@ export function resolveSegments(
     reset,
     pf,
     colors.agentBold,
+  );
+
+  // Thinking (combined enabled + effort)
+  const thinkingSegConfig = config.display.lines
+    .map((line) => line.segments.thinking)
+    .find((t) => t?.enabled);
+  const thinkingColor = pf?.["thinking"] ?? colors.thinkingFg;
+  result.thinking = colorizeOrEmpty(
+    formatThinkingSegment(data, sym, thinkingSegConfig, iconVisible.thinking),
+    thinkingColor,
+    colors.thinkingBold,
+  );
+  addParts(
+    result,
+    "thinking",
+    formatThinkingParts(data, sym, thinkingSegConfig, iconVisible.thinking),
+    colors.thinkingFg,
+    reset,
+    pf,
+    colors.thinkingBold,
   );
 
   // Apply segment templates: resolve items and compose default value

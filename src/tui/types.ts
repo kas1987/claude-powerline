@@ -52,6 +52,7 @@ const SEGMENT_NAME_LIST = [
   "activity",
   "env",
   "agent",
+  "thinking",
 ] as const;
 
 export type SegmentName = (typeof SEGMENT_NAME_LIST)[number];
@@ -105,6 +106,7 @@ export const SEGMENT_PARTS: Record<SegmentName, readonly string[]> = {
   dir: ["icon", "value"],
   env: ["prefix", "value"],
   agent: ["icon", "name"],
+  thinking: ["icon", "enabled", "effort"],
 } as const;
 
 export function isValidSegmentRef(name: string): boolean {

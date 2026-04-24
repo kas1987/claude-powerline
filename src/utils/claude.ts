@@ -63,6 +63,25 @@ export interface ClaudeHookData {
   agent?: {
     name: string;
   };
+  effort?: {
+    level?: string;
+  };
+  thinking?: {
+    enabled?: boolean;
+  };
+}
+
+export function getEffortLevel(hookData: ClaudeHookData): string | null {
+  const level = hookData.effort?.level;
+  if (typeof level !== "string") return null;
+  const trimmed = level.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function getThinkingEnabled(hookData: ClaudeHookData): boolean | null {
+  const enabled = hookData.thinking?.enabled;
+  if (typeof enabled !== "boolean") return null;
+  return enabled;
 }
 
 export function getClaudePaths(): string[] {

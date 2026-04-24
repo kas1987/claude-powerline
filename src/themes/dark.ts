@@ -16,6 +16,7 @@ export const darkTheme: ColorTheme = {
   env: { bg: "#2d2d3d", fg: "#d0a0d0" },
   weekly: { bg: "#2a2a3a", fg: "#a0c4e8" },
   agent: { bg: "#2a2a4a", fg: "#b0a8e0" },
+  thinking: { bg: "#2a2a3a", fg: "#c792ea" },
 };
 
 export const darkAnsi256Theme: ColorTheme = {
@@ -34,6 +35,7 @@ export const darkAnsi256Theme: ColorTheme = {
   env: { bg: "#3a3a3a", fg: "#d787d7" },
   weekly: { bg: "#303030", fg: "#87afd7" },
   agent: { bg: "#3a3a5f", fg: "#afafd7" },
+  thinking: { bg: "#2a2a3a", fg: "#d787ff" },
 };
 
 export const darkAnsiTheme: ColorTheme = {
@@ -52,4 +54,5 @@ export const darkAnsiTheme: ColorTheme = {
   env: { bg: "#444444", fg: "#ff87ff" },
   weekly: { bg: "#3a3a3a", fg: "#5fafff" },
   agent: { bg: "#444444", fg: "#af87ff" },
+  thinking: { bg: "#444444", fg: "#ff87ff" },
 };

@@ -21,6 +21,7 @@ import type {
   EnvSegmentConfig,
   WeeklySegmentConfig,
   AgentSegmentConfig,
+  ThinkingSegmentConfig,
 } from "../segments/renderer";
 
 export interface LineConfig {
@@ -39,6 +40,7 @@ export interface LineConfig {
     env?: EnvSegmentConfig;
     weekly?: WeeklySegmentConfig;
     agent?: AgentSegmentConfig;
+    thinking?: ThinkingSegmentConfig;
   };
 }
 

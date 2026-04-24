@@ -11,6 +11,17 @@ import { tmpdir } from "os";
 
 jest.mock("../src/utils/claude", () => ({
   loadEntriesFromProjects: jest.fn(),
+  getEffortLevel: (hookData: any) => {
+    const level = hookData?.effort?.level;
+    if (typeof level !== "string") return null;
+    const trimmed = level.trim();
+    return trimmed ? trimmed : null;
+  },
+  getThinkingEnabled: (hookData: any) => {
+    const enabled = hookData?.thinking?.enabled;
+    if (typeof enabled !== "boolean") return null;
+    return enabled;
+  },
 }));
 
 const mockLoadEntries = loadEntriesFromProjects as jest.MockedFunction<
@@ -355,6 +366,81 @@ describe("Segment Time Logic", () => {
           { enabled: true },
         ),
       ).toBeNull();
+    });
+  });
+
+  describe("Thinking Segment", () => {
+    const config = { theme: "dark", display: { style: "minimal" } } as any;
+    const symbols = { thinking: "✦" } as any;
+    const colors = {
+      thinkingBg: "#2a2a3a",
+      thinkingFg: "#c792ea",
+    } as any;
+
+    const base: ClaudeHookData = {
+      hook_event_name: "Status",
+      session_id: "test",
+      transcript_path: "/tmp/test.json",
+      cwd: "/test",
+      model: { id: "claude-sonnet-4-6", display_name: "Sonnet" },
+      workspace: { current_dir: "/test", project_dir: "/test" },
+    };
+
+    type Case = {
+      name: string;
+      hook: Partial<ClaudeHookData>;
+      cfg: { showEnabled?: boolean; showEffort?: boolean };
+      expected: string | null;
+    };
+
+    const cases: Case[] = [
+      {
+        name: "both parts enabled, both fields present -> uses separator",
+        hook: { effort: { level: "xhigh" }, thinking: { enabled: true } },
+        cfg: { showEnabled: true, showEffort: true },
+        expected: "✦ On · xhigh",
+      },
+      {
+        name: "only showEnabled, thinking.enabled=false -> no separator",
+        hook: { thinking: { enabled: false } },
+        cfg: { showEnabled: true, showEffort: false },
+        expected: "✦ Off",
+      },
+      {
+        name: "both flags true but only effort present -> no separator",
+        hook: { effort: { level: "xhigh" } },
+        cfg: { showEnabled: true, showEffort: true },
+        expected: "✦ xhigh",
+      },
+      {
+        name: "both flags true, hookData empty -> null",
+        hook: {},
+        cfg: { showEnabled: true, showEffort: true },
+        expected: null,
+      },
+      {
+        name: "both flags false -> null",
+        hook: { effort: { level: "high" }, thinking: { enabled: true } },
+        cfg: { showEnabled: false, showEffort: false },
+        expected: null,
+      },
+    ];
+
+    it.each(cases)("$name", ({ hook, cfg, expected }) => {
+      const renderer = new SegmentRenderer(config, symbols);
+      const result = renderer.renderThinking(
+        { ...base, ...hook } as ClaudeHookData,
+        colors,
+        { enabled: true, ...cfg },
+      );
+      if (expected === null) {
+        expect(result).toBeNull();
+      } else {
+        expect(result).not.toBeNull();
+        expect(result!.text).toBe(expected);
+        expect(result!.bgColor).toBe(colors.thinkingBg);
+        expect(result!.fgColor).toBe(colors.thinkingFg);
+      }
     });
   });
 

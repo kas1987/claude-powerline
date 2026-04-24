@@ -55,6 +55,7 @@ export const DEFAULT_CONFIG: PowerlineConfig = {
             showLinesRemoved: true,
           },
           agent: { enabled: true, showLabel: false },
+          thinking: { enabled: false, showEnabled: true, showEffort: true },
         },
       },
     ],

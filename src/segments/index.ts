@@ -23,4 +23,5 @@ export type {
   EnvSegmentConfig,
   WeeklySegmentConfig,
   AgentSegmentConfig,
+  ThinkingSegmentConfig,
 } from "./renderer";

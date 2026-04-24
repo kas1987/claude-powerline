@@ -48,6 +48,7 @@ export type {
   EnvSegmentConfig,
   WeeklySegmentConfig,
   AgentSegmentConfig,
+  ThinkingSegmentConfig,
   PowerlineSymbols,
   SegmentData,
   BarDisplayStyle,
