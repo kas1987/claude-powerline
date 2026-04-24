@@ -2,11 +2,20 @@ import type { BoxChars } from "./types";
 
 import { visibleLength, stripAnsi, ESC, ANSI_SPLIT } from "../utils/terminal";
 
-export function colorize(text: string, fgColor: string, reset: string): string {
-  if (!fgColor) {
+export function colorize(
+  text: string,
+  fgColor: string,
+  reset: string,
+  bold = false,
+): string {
+  const useBold = bold && reset !== "";
+  if (!fgColor && !useBold) {
     return text;
   }
-  return `${fgColor}${text}${reset}`;
+  if (!useBold) {
+    return `${fgColor}${text}${reset}`;
+  }
+  return `${fgColor}\x1b[1m${text}\x1b[22m${reset}`;
 }
 
 export function padRight(text: string, width: number): string {

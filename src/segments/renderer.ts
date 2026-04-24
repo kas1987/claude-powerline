@@ -163,6 +163,7 @@ export interface SegmentData {
   text: string;
   bgColor: string;
   fgColor: string;
+  bold?: boolean;
 }
 
 interface BarStyleDef {
@@ -448,13 +449,16 @@ export class SegmentRenderer {
 
     let bgColor = colors.contextBg;
     let fgColor = colors.contextFg;
+    let bold = colors.contextBold;
 
     if (contextInfo.contextLeftPercentage <= 20) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
+      bold = colors.contextCriticalBold;
     } else if (contextInfo.contextLeftPercentage <= 40) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
+      bold = colors.contextWarningBold;
     }
 
     const pct =
@@ -478,7 +482,7 @@ export class SegmentRenderer {
         ? `${bar} ${pct}%`
         : `${bar} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
 
-      return { text, bgColor, fgColor };
+      return { text, bgColor, fgColor, bold };
     }
 
     const iconPrefix = this.leadingIcon(this.symbols.context_time, config);
@@ -486,7 +490,7 @@ export class SegmentRenderer {
       ? `${iconPrefix}${pct}%`
       : `${iconPrefix}${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
 
-    return { text, bgColor, fgColor };
+    return { text, bgColor, fgColor, bold };
   }
 
   private buildBar(
@@ -642,18 +646,22 @@ export class SegmentRenderer {
 
     let bgColor = colors.blockBg;
     let fgColor = colors.blockFg;
+    let bold = colors.blockBold;
     if (pct >= warningThreshold) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
+      bold = colors.contextCriticalBold;
     } else if (pct >= 50) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
+      bold = colors.contextWarningBold;
     }
 
     return {
       text: `${this.leadingIcon(this.symbols.block_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
       bgColor,
       fgColor,
+      bold,
     };
   }
 
@@ -672,18 +680,22 @@ export class SegmentRenderer {
 
     let bgColor = colors.weeklyBg;
     let fgColor = colors.weeklyFg;
+    let bold = colors.weeklyBold;
     if (pct >= 80) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
+      bold = colors.contextCriticalBold;
     } else if (pct >= 50) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
+      bold = colors.contextWarningBold;
     }
 
     return {
       text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
       bgColor,
       fgColor,
+      bold,
     };
   }
 

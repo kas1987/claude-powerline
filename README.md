@@ -586,7 +586,7 @@ Create custom themes and configure color compatibility:
 }
 ```
 
-**Color Options:** `bg` (hex, `transparent`, `none`) &#8226; `fg` (hex)
+**Color Options:** `bg` (hex, `transparent`, `none`) &#8226; `fg` (hex) &#8226; `bold` (boolean, optional, defaults to `false`)
 
 **TUI Grid Colors:** In TUI grid mode, custom colors also support bare segment names and dot-notation parts as keys. A bare segment key (e.g. `"context"`) sets the default color for the segment and all its parts. A part key (e.g. `"context.bar"`) overrides a specific part:
 

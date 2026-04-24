@@ -94,6 +94,7 @@ export function renderMediumMetrics(ctx: RenderCtx): void {
         formatBlockSegment(data.blockInfo, sym, config, showBlockIcon),
         colors.blockFg,
         reset,
+        colors.blockBold,
       ),
     );
   }
@@ -104,6 +105,7 @@ export function renderMediumMetrics(ctx: RenderCtx): void {
         formatWeeklySegment(sevenDay, sym, showWeeklyIcon),
         colors.weeklyFg,
         reset,
+        colors.weeklyBold,
       ),
     );
   }
@@ -113,6 +115,7 @@ export function renderMediumMetrics(ctx: RenderCtx): void {
         formatTodaySegment(data.todayInfo, sym, config, showTodayIcon),
         colors.todayFg,
         reset,
+        colors.todayBold,
       ),
     );
   }
@@ -123,13 +126,19 @@ export function renderMediumMetrics(ctx: RenderCtx): void {
         formatSessionSegment(data.usageInfo, sym, config, showSessionIcon),
         colors.sessionFg,
         reset,
+        colors.sessionBold,
       ),
     );
   }
   const activityParts = collectActivityParts(data, sym);
   if (activityParts.length > 0) {
     line2Parts.push(
-      colorize(activityParts.join(" · "), colors.metricsFg, reset),
+      colorize(
+        activityParts.join(" · "),
+        colors.metricsFg,
+        reset,
+        colors.metricsBold,
+      ),
     );
   }
 
@@ -217,6 +226,7 @@ export function renderNarrowMetrics(ctx: RenderCtx): void {
           formatBlockSegment(data.blockInfo, sym, config, showBlockIcon),
           colors.blockFg,
           reset,
+          colors.blockBold,
         ),
         innerWidth,
       ),
@@ -231,6 +241,7 @@ export function renderNarrowMetrics(ctx: RenderCtx): void {
           formatWeeklySegment(narrowSevenDay, sym, showWeeklyIcon),
           colors.weeklyFg,
           reset,
+          colors.weeklyBold,
         ),
         innerWidth,
       ),
@@ -242,13 +253,17 @@ export function renderNarrowMetrics(ctx: RenderCtx): void {
     const sessionText = showSessionIcon
       ? `${sym.session_cost} ${formatCost(data.usageInfo.session.cost)}`
       : formatCost(data.usageInfo.session.cost);
-    sessionAndToday.push(colorize(sessionText, colors.sessionFg, reset));
+    sessionAndToday.push(
+      colorize(sessionText, colors.sessionFg, reset, colors.sessionBold),
+    );
   }
   if (data.todayInfo) {
     const todayText = showTodayIcon
       ? `${sym.today_cost} ${formatCost(data.todayInfo.cost)} today`
       : `${formatCost(data.todayInfo.cost)} today`;
-    sessionAndToday.push(colorize(todayText, colors.todayFg, reset));
+    sessionAndToday.push(
+      colorize(todayText, colors.todayFg, reset, colors.todayBold),
+    );
   }
   if (sessionAndToday.length > 0) {
     lines.push(

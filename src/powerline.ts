@@ -58,6 +58,7 @@ interface RenderedSegment {
   text: string;
   bgColor: string;
   fgColor: string;
+  bold?: boolean;
 }
 
 export class PowerlineRenderer {
@@ -239,6 +240,7 @@ export class PowerlineRenderer {
             text: segmentData.text,
             bgColor: segmentData.bgColor,
             fgColor: segmentData.fgColor,
+            bold: segmentData.bold,
           });
         }
       }
@@ -398,12 +400,16 @@ export class PowerlineRenderer {
         line += " ";
       }
 
+      const bold =
+        segment.bold ?? this.getSegmentBoldFlag(segment.type, colors);
+
       line += this.formatSegment(
         segment.bgColor,
         segment.fgColor,
         segment.text,
         nextSegment?.bgColor,
         colors,
+        bold,
       );
     }
 
@@ -449,6 +455,7 @@ export class PowerlineRenderer {
           text: segmentData.text,
           bgColor: segmentData.bgColor,
           fgColor: segmentData.fgColor,
+          bold: segmentData.bold,
         });
       }
     }
@@ -752,9 +759,13 @@ export class PowerlineRenderer {
         fgHex = colors.bg;
       }
 
+      const bold =
+        colorSupport !== "none" && Boolean(custom?.bold ?? fallback.bold);
+
       return {
         bg: convertHex(colors.bg, true),
         fg: convertHex(fgHex, false),
+        bold,
       };
     };
 
@@ -777,32 +788,46 @@ export class PowerlineRenderer {
       reset: colorSupport === "none" ? "" : RESET_CODE,
       modeBg: directory.bg,
       modeFg: directory.fg,
+      modeBold: directory.bold,
       gitBg: git.bg,
       gitFg: git.fg,
+      gitBold: git.bold,
       modelBg: model.bg,
       modelFg: model.fg,
+      modelBold: model.bold,
       sessionBg: session.bg,
       sessionFg: session.fg,
+      sessionBold: session.bold,
       blockBg: block.bg,
       blockFg: block.fg,
+      blockBold: block.bold,
       todayBg: today.bg,
       todayFg: today.fg,
+      todayBold: today.bold,
       tmuxBg: tmux.bg,
       tmuxFg: tmux.fg,
+      tmuxBold: tmux.bold,
       contextBg: context.bg,
       contextFg: context.fg,
+      contextBold: context.bold,
       contextWarningBg: contextWarning.bg,
       contextWarningFg: contextWarning.fg,
+      contextWarningBold: contextWarning.bold,
       contextCriticalBg: contextCritical.bg,
       contextCriticalFg: contextCritical.fg,
+      contextCriticalBold: contextCritical.bold,
       metricsBg: metrics.bg,
       metricsFg: metrics.fg,
+      metricsBold: metrics.bold,
       versionBg: version.bg,
       versionFg: version.fg,
+      versionBold: version.bold,
       envBg: env.bg,
       envFg: env.fg,
+      envBold: env.bold,
       weeklyBg: weekly.bg,
       weeklyFg: weekly.fg,
+      weeklyBold: weekly.bold,
       partFg: theme === "custom" ? this.resolvePartColors(convertHex) : {},
     };
   }
@@ -859,15 +884,54 @@ export class PowerlineRenderer {
     }
   }
 
+  private getSegmentBoldFlag(
+    segmentType: string,
+    colors: PowerlineColors,
+  ): boolean {
+    switch (segmentType) {
+      case "directory":
+        return colors.modeBold;
+      case "git":
+        return colors.gitBold;
+      case "model":
+        return colors.modelBold;
+      case "session":
+      case "sessionId":
+        return colors.sessionBold;
+      case "block":
+        return colors.blockBold;
+      case "today":
+        return colors.todayBold;
+      case "tmux":
+        return colors.tmuxBold;
+      case "context":
+        return colors.contextBold;
+      case "metrics":
+        return colors.metricsBold;
+      case "version":
+        return colors.versionBold;
+      case "env":
+        return colors.envBold;
+      case "weekly":
+        return colors.weeklyBold;
+      default:
+        return colors.modeBold;
+    }
+  }
+
   private formatSegment(
     bgColor: string,
     fgColor: string,
     text: string,
     nextBgColor: string | undefined,
     colors: PowerlineColors,
+    bold: boolean,
   ): string {
     const isCapsuleStyle = this.config.display.style === "capsule";
     const padding = " ".repeat(this.config.display.padding ?? 1);
+    const useBold = bold && colors.reset !== "";
+    const boldOn = useBold ? "\x1b[1m" : "";
+    const boldOff = useBold ? "\x1b[22m" : "";
 
     if (isCapsuleStyle) {
       const colorMode = this.config.display.colorCompatibility || "auto";
@@ -878,14 +942,14 @@ export class PowerlineRenderer {
 
       const leftCap = `${capFgColor}${this.symbols.left}${colors.reset}`;
 
-      const content = `${bgColor}${fgColor}${padding}${text}${padding}${colors.reset}`;
+      const content = `${bgColor}${fgColor}${boldOn}${padding}${text}${padding}${boldOff}${colors.reset}`;
 
       const rightCap = `${capFgColor}${this.symbols.right}${colors.reset}`;
 
       return `${leftCap}${content}${rightCap}`;
     }
 
-    let output = `${bgColor}${fgColor}${padding}${text}${padding}`;
+    let output = `${bgColor}${fgColor}${boldOn}${padding}${text}${padding}${boldOff}`;
 
     const colorMode = this.config.display.colorCompatibility || "auto";
     const colorSupport = colorMode === "auto" ? getColorSupport() : colorMode;

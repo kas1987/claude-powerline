@@ -112,16 +112,19 @@ export function buildTitleBar(
   );
 }
 
-function resolveThresholdColor(
+function resolveThresholdStyle(
   pct: number,
-  defaultColor: string,
+  defaultFg: string,
+  defaultBold: boolean,
   colors: PowerlineColors,
   warningAt = 60,
   criticalAt = 80,
-): string {
-  if (pct >= criticalAt) return colors.contextCriticalFg;
-  if (pct >= warningAt) return colors.contextWarningFg;
-  return defaultColor;
+): { fg: string; bold: boolean } {
+  if (pct >= criticalAt)
+    return { fg: colors.contextCriticalFg, bold: colors.contextCriticalBold };
+  if (pct >= warningAt)
+    return { fg: colors.contextWarningFg, bold: colors.contextWarningBold };
+  return { fg: defaultFg, bold: defaultBold };
 }
 
 function buildBarString(
@@ -130,6 +133,7 @@ function buildBarString(
   sym: SymbolSet,
   reset: string,
   fgColor: string,
+  bold = false,
 ): string {
   barWidth = Math.max(5, barWidth);
   const filledCount = Math.max(
@@ -139,7 +143,7 @@ function buildBarString(
   const emptyCount = barWidth - filledCount;
   const bar =
     sym.bar_filled.repeat(filledCount) + sym.bar_empty.repeat(emptyCount);
-  return colorize(bar, fgColor, reset);
+  return colorize(bar, fgColor, reset, bold);
 }
 
 export function formatContextParts(
@@ -175,8 +179,13 @@ export function buildContextBar(
   const usedPct = data.contextInfo.usablePercentage;
   const defaultFg =
     partFg?.["context.bar"] ?? partFg?.["context"] ?? colors.contextFg;
-  const fgColor = resolveThresholdColor(usedPct, defaultFg, colors);
-  return buildBarString(usedPct, barWidth, sym, reset, fgColor);
+  const { fg, bold } = resolveThresholdStyle(
+    usedPct,
+    defaultFg,
+    colors.contextBold,
+    colors,
+  );
+  return buildBarString(usedPct, barWidth, sym, reset, fg, bold);
 }
 
 export function buildBlockBar(
@@ -194,14 +203,15 @@ export function buildBlockBar(
   const warningThreshold = config.budget?.block?.warningThreshold ?? 80;
   const defaultFg =
     partFg?.["block.bar"] ?? partFg?.["block"] ?? colors.blockFg;
-  const fgColor = resolveThresholdColor(
+  const { fg, bold } = resolveThresholdStyle(
     pct,
     defaultFg,
+    colors.blockBold,
     colors,
     50,
     warningThreshold,
   );
-  return buildBarString(pct, barWidth, sym, reset, fgColor);
+  return buildBarString(pct, barWidth, sym, reset, fg, bold);
 }
 
 export function buildWeeklyBar(
@@ -218,8 +228,13 @@ export function buildWeeklyBar(
   const pct = sevenDay.used_percentage;
   const defaultFg =
     partFg?.["weekly.bar"] ?? partFg?.["weekly"] ?? colors.weeklyFg;
-  const fgColor = resolveThresholdColor(pct, defaultFg, colors);
-  return buildBarString(pct, barWidth, sym, reset, fgColor);
+  const { fg, bold } = resolveThresholdStyle(
+    pct,
+    defaultFg,
+    colors.weeklyBold,
+    colors,
+  );
+  return buildBarString(pct, barWidth, sym, reset, fg, bold);
 }
 
 export function buildContextLine(
@@ -246,9 +261,14 @@ export function buildContextLine(
   const bar =
     sym.bar_filled.repeat(filledCount) + sym.bar_empty.repeat(emptyCount);
 
-  const fgColor = resolveThresholdColor(usedPct, colors.contextFg, colors);
+  const { fg, bold } = resolveThresholdStyle(
+    usedPct,
+    colors.contextFg,
+    colors.contextBold,
+    colors,
+  );
 
-  return colorize(`${bar}${suffix}`, fgColor, reset);
+  return colorize(`${bar}${suffix}`, fg, reset, bold);
 }
 
 function getDirectoryDisplay(hookData: TuiData["hookData"]): string {
@@ -276,6 +296,7 @@ export function collectMetricSegments(
         ),
         colors.blockFg,
         reset,
+        colors.blockBold,
       ),
     );
   }
@@ -290,6 +311,7 @@ export function collectMetricSegments(
         ),
         colors.weeklyFg,
         reset,
+        colors.weeklyBold,
       ),
     );
   }
@@ -304,6 +326,7 @@ export function collectMetricSegments(
         ),
         colors.sessionFg,
         reset,
+        colors.sessionBold,
       ),
     );
   }
@@ -318,13 +341,21 @@ export function collectMetricSegments(
         ),
         colors.todayFg,
         reset,
+        colors.todayBold,
       ),
     );
   }
 
   const activityParts = collectActivityParts(data, sym);
   if (activityParts.length > 0) {
-    segments.push(colorize(activityParts.join(" · "), colors.metricsFg, reset));
+    segments.push(
+      colorize(
+        activityParts.join(" · "),
+        colors.metricsFg,
+        reset,
+        colors.metricsBold,
+      ),
+    );
   }
 
   return segments;
@@ -365,10 +396,10 @@ export function collectWorkspaceParts(
     sym,
     resolveIconVisibility(config, "git"),
   );
-  if (gitStr) parts.push(colorize(gitStr, colors.gitFg, reset));
+  if (gitStr) parts.push(colorize(gitStr, colors.gitFg, reset, colors.gitBold));
 
   const dir = abbreviateFishStyle(getDirectoryDisplay(data.hookData));
-  parts.push(colorize(dir, colors.modeFg, reset));
+  parts.push(colorize(dir, colors.modeFg, reset, colors.modeBold));
 
   return parts;
 }
@@ -391,11 +422,19 @@ export function collectFooterParts(
           : `v${data.hookData.version}`,
         colors.versionFg,
         reset,
+        colors.versionBold,
       ),
     );
   }
   if (data.tmuxSessionId) {
-    parts.push(colorize(`tmux:${data.tmuxSessionId}`, colors.tmuxFg, reset));
+    parts.push(
+      colorize(
+        `tmux:${data.tmuxSessionId}`,
+        colors.tmuxFg,
+        reset,
+        colors.tmuxBold,
+      ),
+    );
   }
 
   if (data.metricsInfo) {
@@ -426,7 +465,14 @@ export function collectFooterParts(
       );
     }
     if (metricParts.length > 0) {
-      parts.push(colorize(metricParts.join(" · "), colors.metricsFg, reset));
+      parts.push(
+        colorize(
+          metricParts.join(" · "),
+          colors.metricsFg,
+          reset,
+          colors.metricsBold,
+        ),
+      );
     }
   }
 
@@ -439,7 +485,12 @@ export function collectFooterParts(
     if (envVal) {
       const prefix = envConfig.prefix ?? envConfig.variable;
       parts.push(
-        colorize(prefix ? `${prefix}:${envVal}` : envVal, colors.envFg, reset),
+        colorize(
+          prefix ? `${prefix}:${envVal}` : envVal,
+          colors.envFg,
+          reset,
+          colors.envBold,
+        ),
       );
     }
   }
@@ -867,11 +918,12 @@ function addParts(
   color: string,
   reset: string,
   partFg?: Record<string, string>,
+  bold = false,
 ): void {
   for (const [key, value] of Object.entries(parts)) {
     const partKey = `${segment}.${key}`;
     const partColor = partFg?.[partKey] ?? partFg?.[segment] ?? color;
-    result[partKey] = value ? colorize(value, partColor, reset) : "";
+    result[partKey] = value ? colorize(value, partColor, reset, bold) : "";
   }
 }
 
@@ -944,8 +996,11 @@ export function resolveSegments(
   const { sym, config, reset, colors } = ctx;
   const pf = colors.partFg;
 
-  const colorizeOrEmpty = (text: string, color: string): string =>
-    text ? colorize(text, color, reset) : "";
+  const colorizeOrEmpty = (
+    text: string,
+    color: string,
+    bold = false,
+  ): string => (text ? colorize(text, color, reset, bold) : "");
 
   const result: Record<string, string> = {};
 
@@ -969,6 +1024,7 @@ export function resolveSegments(
   result.model = colorizeOrEmpty(
     modelIcon ? `${modelIcon} ${modelName}` : modelName,
     modelColor,
+    colors.modelBold,
   );
   addParts(
     result,
@@ -977,6 +1033,7 @@ export function resolveSegments(
     colors.modelFg,
     reset,
     pf,
+    colors.modelBold,
   );
 
   // Context (bar is width-dependent, resolved later via lateResolve)
@@ -989,14 +1046,15 @@ export function resolveSegments(
   );
   result.context = contextLine ?? "";
   const ctxParts = formatContextParts(data, sym, iconVisible.context);
-  const ctxColor = data.contextInfo
-    ? resolveThresholdColor(
+  const ctxStyle = data.contextInfo
+    ? resolveThresholdStyle(
         data.contextInfo.usablePercentage,
         colors.contextFg,
+        colors.contextBold,
         colors,
       )
-    : colors.contextFg;
-  addParts(result, "context", ctxParts, ctxColor, reset, pf);
+    : { fg: colors.contextFg, bold: colors.contextBold };
+  addParts(result, "context", ctxParts, ctxStyle.fg, reset, pf, ctxStyle.bold);
 
   // Block
   if (data.blockInfo) {
@@ -1004,6 +1062,7 @@ export function resolveSegments(
     result.block = colorizeOrEmpty(
       formatBlockSegment(data.blockInfo, sym, config, iconVisible.block),
       blockColor,
+      colors.blockBold,
     );
     addParts(
       result,
@@ -1012,6 +1071,7 @@ export function resolveSegments(
       colors.blockFg,
       reset,
       pf,
+      colors.blockBold,
     );
   } else {
     result.block = "";
@@ -1023,6 +1083,7 @@ export function resolveSegments(
     result.session = colorizeOrEmpty(
       formatSessionSegment(data.usageInfo, sym, config, iconVisible.session),
       sessionColor,
+      colors.sessionBold,
     );
     addParts(
       result,
@@ -1031,6 +1092,7 @@ export function resolveSegments(
       colors.sessionFg,
       reset,
       pf,
+      colors.sessionBold,
     );
   } else {
     result.session = "";
@@ -1042,6 +1104,7 @@ export function resolveSegments(
     result.today = colorizeOrEmpty(
       formatTodaySegment(data.todayInfo, sym, config, iconVisible.today),
       todayColor,
+      colors.todayBold,
     );
     addParts(
       result,
@@ -1050,6 +1113,7 @@ export function resolveSegments(
       colors.todayFg,
       reset,
       pf,
+      colors.todayBold,
     );
   } else {
     result.today = "";
@@ -1062,6 +1126,7 @@ export function resolveSegments(
     result.weekly = colorizeOrEmpty(
       formatWeeklySegment(sevenDay, sym, iconVisible.weekly),
       weeklyColor,
+      colors.weeklyBold,
     );
     addParts(
       result,
@@ -1070,6 +1135,7 @@ export function resolveSegments(
       colors.weeklyFg,
       reset,
       pf,
+      colors.weeklyBold,
     );
   } else {
     result.weekly = "";
@@ -1080,6 +1146,7 @@ export function resolveSegments(
   result.git = colorizeOrEmpty(
     formatGitSegment(data, sym, iconVisible.git),
     gitColor,
+    colors.gitBold,
   );
   addParts(
     result,
@@ -1088,11 +1155,16 @@ export function resolveSegments(
     colors.gitFg,
     reset,
     pf,
+    colors.gitBold,
   );
 
   // Dir
   const dirColor = pf?.["dir"] ?? colors.modeFg;
-  result.dir = colorizeOrEmpty(formatDirValue(data, config), dirColor);
+  result.dir = colorizeOrEmpty(
+    formatDirValue(data, config),
+    dirColor,
+    colors.modeBold,
+  );
   addParts(
     result,
     "dir",
@@ -1100,6 +1172,7 @@ export function resolveSegments(
     colors.modeFg,
     reset,
     pf,
+    colors.modeBold,
   );
 
   // Version
@@ -1107,6 +1180,7 @@ export function resolveSegments(
   result.version = colorizeOrEmpty(
     formatVersionSegment(data, sym, iconVisible.version),
     versionColor,
+    colors.versionBold,
   );
   addParts(
     result,
@@ -1115,18 +1189,32 @@ export function resolveSegments(
     colors.versionFg,
     reset,
     pf,
+    colors.versionBold,
   );
 
   // Tmux
   const tmuxColor = pf?.["tmux"] ?? colors.tmuxFg;
-  result.tmux = colorizeOrEmpty(formatTmuxSegment(data), tmuxColor);
-  addParts(result, "tmux", formatTmuxParts(data), colors.tmuxFg, reset, pf);
+  result.tmux = colorizeOrEmpty(
+    formatTmuxSegment(data),
+    tmuxColor,
+    colors.tmuxBold,
+  );
+  addParts(
+    result,
+    "tmux",
+    formatTmuxParts(data),
+    colors.tmuxFg,
+    reset,
+    pf,
+    colors.tmuxBold,
+  );
 
   // Metrics
   const metricsColor = pf?.["metrics"] ?? colors.metricsFg;
   result.metrics = colorizeOrEmpty(
     formatMetricsSegment(data, sym),
     metricsColor,
+    colors.metricsBold,
   );
   addParts(
     result,
@@ -1135,6 +1223,7 @@ export function resolveSegments(
     colors.metricsFg,
     reset,
     pf,
+    colors.metricsBold,
   );
 
   // Activity
@@ -1142,6 +1231,7 @@ export function resolveSegments(
   result.activity = colorizeOrEmpty(
     formatActivitySegment(data, sym),
     activityColor,
+    colors.metricsBold,
   );
   addParts(
     result,
@@ -1150,12 +1240,25 @@ export function resolveSegments(
     colors.metricsFg,
     reset,
     pf,
+    colors.metricsBold,
   );
 
   // Env
   const envColor = pf?.["env"] ?? colors.envFg;
-  result.env = colorizeOrEmpty(formatEnvSegment(config), envColor);
-  addParts(result, "env", formatEnvParts(config), colors.envFg, reset, pf);
+  result.env = colorizeOrEmpty(
+    formatEnvSegment(config),
+    envColor,
+    colors.envBold,
+  );
+  addParts(
+    result,
+    "env",
+    formatEnvParts(config),
+    colors.envFg,
+    reset,
+    pf,
+    colors.envBold,
+  );
 
   // Apply segment templates: resolve items and compose default value
   const templates: Record<string, ResolvedTemplate> = {};
