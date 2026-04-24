@@ -414,33 +414,27 @@ export function collectFooterParts(
 ): string[] {
   const parts: string[] = [];
 
-  if (data.hookData.version) {
-    const showVersionIcon = resolveIconVisibility(config, "version");
-    parts.push(
-      colorize(
-        showVersionIcon
-          ? `${sym.version} v${data.hookData.version}`
-          : `v${data.hookData.version}`,
-        colors.versionFg,
-        reset,
-        colors.versionBold,
-      ),
-    );
+  const versionText = formatVersionSegment(
+    data,
+    sym,
+    resolveIconVisibility(config, "version"),
+  );
+  if (versionText) {
+    parts.push(colorize(versionText, colors.versionFg, reset, colors.versionBold));
   }
 
   const thinkingSegConfig = config.display.lines
     .map((line) => line.segments.thinking)
     .find((t) => t?.enabled);
-  const thinkingBody = buildThinkingBody(data, thinkingSegConfig);
-  if (thinkingBody) {
-    const showThinkingIcon = resolveIconVisibility(config, "thinking");
+  const thinkingText = formatThinkingSegment(
+    data,
+    sym,
+    thinkingSegConfig,
+    resolveIconVisibility(config, "thinking"),
+  );
+  if (thinkingText) {
     parts.push(
-      colorize(
-        showThinkingIcon ? `${sym.thinking} ${thinkingBody}` : thinkingBody,
-        colors.thinkingFg,
-        reset,
-        colors.thinkingBold,
-      ),
+      colorize(thinkingText, colors.thinkingFg, reset, colors.thinkingBold),
     );
   }
 
