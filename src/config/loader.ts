@@ -22,6 +22,7 @@ import type {
   WeeklySegmentConfig,
   AgentSegmentConfig,
   ThinkingSegmentConfig,
+  CacheTimerSegmentConfig,
 } from "../segments/renderer";
 
 export interface LineConfig {
@@ -41,6 +42,7 @@ export interface LineConfig {
     weekly?: WeeklySegmentConfig;
     agent?: AgentSegmentConfig;
     thinking?: ThinkingSegmentConfig;
+    cacheTimer?: CacheTimerSegmentConfig;
   };
 }
 

@@ -57,6 +57,9 @@ const PLAIN_COLORS: PowerlineColors = {
   thinkingBg: "",
   thinkingFg: "",
   thinkingBold: false,
+  cacheTimerBg: "",
+  cacheTimerFg: "",
+  cacheTimerBold: false,
   partFg: {},
 };
 
@@ -115,6 +118,7 @@ function makeTuiData(overrides: Partial<TuiData> = {}): TuiData {
       linesRemoved: 15,
     },
     gitInfo: { branch: "feat/tui-mode", status: "dirty", ahead: 2, behind: 0 },
+    cacheTimerInfo: null,
     tmuxSessionId: "dev",
     colors: PLAIN_COLORS,
     ...overrides,
@@ -481,6 +485,42 @@ describe("TUI Panel Rendering", () => {
       expect(resultAbsent["thinking.icon"]).toBe("");
       expect(resultAbsent["thinking.enabled"]).toBe("");
       expect(resultAbsent["thinking.effort"]).toBe("");
+    });
+
+    it("resolveSegments exposes cacheTimer sub-parts (icon, value) using formatted elapsed time", () => {
+      const config: PowerlineConfig = {
+        ...DEFAULT_CONFIG,
+        display: { ...DEFAULT_CONFIG.display, style: "tui" },
+      };
+
+      const data = makeTuiData({ cacheTimerInfo: { elapsedSeconds: 200 } });
+      const { data: result } = resolveSegments(data, mkCtx(config, data));
+      expect(result["cacheTimer.icon"]).toBe(SYMBOLS.cache_timer);
+      expect(result["cacheTimer.value"]).toBe("3:20");
+
+      const hiddenConfig: PowerlineConfig = {
+        ...DEFAULT_CONFIG,
+        display: {
+          ...DEFAULT_CONFIG.display,
+          style: "tui",
+          showIcons: false,
+        },
+      };
+      const { data: hiddenResult } = resolveSegments(
+        data,
+        mkCtx(hiddenConfig, data),
+      );
+      expect(hiddenResult["cacheTimer.icon"]).toBe("");
+      expect(hiddenResult["cacheTimer.value"]).toBe("3:20");
+
+      const absent = makeTuiData();
+      const { data: resultAbsent } = resolveSegments(
+        absent,
+        mkCtx(config, absent),
+      );
+      expect(resultAbsent["cacheTimer"]).toBe("");
+      expect(resultAbsent["cacheTimer.icon"]).toBe("");
+      expect(resultAbsent["cacheTimer.value"]).toBe("");
     });
   });
 });

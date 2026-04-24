@@ -22,6 +22,7 @@ import {
   formatLongTimeRemaining,
   minutesUntilReset,
   abbreviateFishStyle,
+  formatCacheTimerElapsed,
 } from "../utils/formatters";
 import { getBudgetStatus } from "../utils/budget";
 import { colorize, truncateAnsi } from "./primitives";
@@ -436,6 +437,24 @@ export function collectFooterParts(
     parts.push(
       colorize(thinkingText, colors.thinkingFg, reset, colors.thinkingBold),
     );
+  }
+
+  const cacheTimerEnabled = config.display.lines.some(
+    (line) => line.segments.cacheTimer?.enabled,
+  );
+  if (cacheTimerEnabled && data.cacheTimerInfo) {
+    const cacheTimerText = formatCacheTimerSegment(
+      data,
+      sym,
+      resolveIconVisibility(config, "cacheTimer"),
+    );
+    if (cacheTimerText) {
+      const { fg, bold } = cacheTimerStyle(
+        data.cacheTimerInfo.elapsedSeconds,
+        colors,
+      );
+      parts.push(colorize(cacheTimerText, fg, reset, bold));
+    }
   }
 
   if (data.tmuxSessionId) {
@@ -973,6 +992,41 @@ function formatThinkingSegment(
   return iconVisible ? `${sym.thinking} ${body}` : body;
 }
 
+function formatCacheTimerParts(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): Record<string, string> {
+  if (!data.cacheTimerInfo) return { icon: "", value: "" };
+  return {
+    icon: iconVisible ? sym.cache_timer : "",
+    value: formatCacheTimerElapsed(data.cacheTimerInfo.elapsedSeconds),
+  };
+}
+
+function formatCacheTimerSegment(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): string {
+  const parts = formatCacheTimerParts(data, sym, iconVisible);
+  if (!parts.value) return "";
+  return parts.icon ? `${parts.icon} ${parts.value}` : parts.value;
+}
+
+function cacheTimerStyle(
+  elapsed: number,
+  colors: PowerlineColors,
+): { fg: string; bold: boolean } {
+  if (elapsed >= 300) {
+    return { fg: colors.contextCriticalFg, bold: colors.contextCriticalBold };
+  }
+  if (elapsed >= 180) {
+    return { fg: colors.contextWarningFg, bold: colors.contextWarningBold };
+  }
+  return { fg: colors.cacheTimerFg, bold: colors.cacheTimerBold };
+}
+
 function formatTmuxParts(data: TuiData): Record<string, string> {
   if (!data.tmuxSessionId) return { label: "", value: "" };
   return { label: "tmux", value: data.tmuxSessionId };
@@ -1107,6 +1161,7 @@ export function resolveSegments(
     version: resolveIconVisibility(config, "version"),
     agent: resolveIconVisibility(config, "agent"),
     thinking: resolveIconVisibility(config, "thinking"),
+    cacheTimer: resolveIconVisibility(config, "cacheTimer"),
   };
 
   // Model
@@ -1388,6 +1443,25 @@ export function resolveSegments(
     reset,
     pf,
     colors.thinkingBold,
+  );
+
+  // CacheTimer
+  const cacheTimerElapsed = data.cacheTimerInfo?.elapsedSeconds ?? 0;
+  const cacheTimerStyleResolved = cacheTimerStyle(cacheTimerElapsed, colors);
+  const cacheTimerColor = pf?.["cacheTimer"] ?? cacheTimerStyleResolved.fg;
+  result.cacheTimer = colorizeOrEmpty(
+    formatCacheTimerSegment(data, sym, iconVisible.cacheTimer),
+    cacheTimerColor,
+    cacheTimerStyleResolved.bold,
+  );
+  addParts(
+    result,
+    "cacheTimer",
+    formatCacheTimerParts(data, sym, iconVisible.cacheTimer),
+    cacheTimerStyleResolved.fg,
+    reset,
+    pf,
+    cacheTimerStyleResolved.bold,
   );
 
   // Apply segment templates: resolve items and compose default value

@@ -35,6 +35,7 @@ function makeCustomTheme(overrides: Partial<ColorTheme> = {}): ColorTheme {
     weekly: { ...base },
     agent: { ...base },
     thinking: { ...base },
+    cacheTimer: { ...base },
     ...overrides,
   };
 }

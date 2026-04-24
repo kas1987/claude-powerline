@@ -4,6 +4,7 @@ import type { TodayInfo } from "../segments/today";
 import type { ContextInfo } from "../segments/context";
 import type { MetricsInfo } from "../segments/metrics";
 import type { GitInfo } from "../segments/git";
+import type { CacheTimerInfo } from "../segments/cacheTimer";
 import type { ClaudeHookData } from "../utils/claude";
 import type { PowerlineColors } from "../themes";
 import type { PowerlineConfig } from "../config/loader";
@@ -29,6 +30,7 @@ export interface TuiData {
   contextInfo: ContextInfo | null;
   metricsInfo: MetricsInfo | null;
   gitInfo: GitInfo | null;
+  cacheTimerInfo: CacheTimerInfo | null;
   tmuxSessionId: string | null;
   colors: PowerlineColors;
 }
@@ -53,6 +55,7 @@ const SEGMENT_NAME_LIST = [
   "env",
   "agent",
   "thinking",
+  "cacheTimer",
 ] as const;
 
 export type SegmentName = (typeof SEGMENT_NAME_LIST)[number];
@@ -107,6 +110,7 @@ export const SEGMENT_PARTS: Record<SegmentName, readonly string[]> = {
   env: ["prefix", "value"],
   agent: ["icon", "name"],
   thinking: ["icon", "enabled", "effort"],
+  cacheTimer: ["icon", "value"],
 } as const;
 
 export function isValidSegmentRef(name: string): boolean {

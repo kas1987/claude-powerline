@@ -158,3 +158,11 @@ export function formatLongTimeRemaining(totalMinutes: number): string {
 export function minutesUntilReset(epochSeconds: number): number {
   return Math.round(Math.max(0, epochSeconds * 1000 - Date.now()) / 60000);
 }
+
+export function formatCacheTimerElapsed(seconds: number): string {
+  if (seconds >= 3600) return "1h+";
+  if (seconds >= 300) return `${Math.floor(seconds / 60)}m`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}

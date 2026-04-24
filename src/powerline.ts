@@ -20,9 +20,11 @@ import type {
   WeeklySegmentConfig,
   AgentSegmentConfig,
   ThinkingSegmentConfig,
+  CacheTimerSegmentConfig,
 } from "./segments";
 import type { BlockInfo } from "./segments/block";
 import type { TodayInfo } from "./segments/today";
+import type { CacheTimerInfo } from "./segments/cacheTimer";
 import type { TuiData } from "./tui";
 
 import {
@@ -44,6 +46,7 @@ import {
 } from "./segments";
 import { BlockProvider } from "./segments/block";
 import { TodayProvider } from "./segments/today";
+import { CacheTimerProvider } from "./segments/cacheTimer";
 import {
   SYMBOLS,
   TEXT_SYMBOLS,
@@ -72,6 +75,7 @@ export class PowerlineRenderer {
   private _gitService?: GitService;
   private _tmuxService?: TmuxService;
   private _metricsProvider?: MetricsProvider;
+  private _cacheTimerProvider?: CacheTimerProvider;
   private _segmentRenderer?: SegmentRenderer;
 
   constructor(private readonly config: PowerlineConfig) {
@@ -127,6 +131,13 @@ export class PowerlineRenderer {
     return this._metricsProvider;
   }
 
+  private get cacheTimerProvider(): CacheTimerProvider {
+    if (!this._cacheTimerProvider) {
+      this._cacheTimerProvider = new CacheTimerProvider();
+    }
+    return this._cacheTimerProvider;
+  }
+
   private get segmentRenderer(): SegmentRenderer {
     if (!this._segmentRenderer) {
       this._segmentRenderer = new SegmentRenderer(this.config, this.symbols);
@@ -169,6 +180,10 @@ export class PowerlineRenderer {
       ? await this.metricsProvider.getMetricsInfo(hookData.session_id, hookData)
       : null;
 
+    const cacheTimerInfo = this.needsSegmentInfo("cacheTimer")
+      ? await this.cacheTimerProvider.getCacheTimerInfo(hookData)
+      : null;
+
     if (this.config.display.autoWrap) {
       return this.generateAutoWrapStatusline(
         hookData,
@@ -177,6 +192,7 @@ export class PowerlineRenderer {
         todayInfo,
         contextInfo,
         metricsInfo,
+        cacheTimerInfo,
       );
     }
 
@@ -190,6 +206,7 @@ export class PowerlineRenderer {
           todayInfo,
           contextInfo,
           metricsInfo,
+          cacheTimerInfo,
         ),
       ),
     );
@@ -204,6 +221,7 @@ export class PowerlineRenderer {
     todayInfo: TodayInfo | null,
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
+    cacheTimerInfo: CacheTimerInfo | null,
   ): Promise<string> {
     const colors = this.getThemeColors();
     const currentDir = hookData.workspace?.current_dir || hookData.cwd || "/";
@@ -232,6 +250,7 @@ export class PowerlineRenderer {
           todayInfo,
           contextInfo,
           metricsInfo,
+          cacheTimerInfo,
           colors,
           currentDir,
         );
@@ -322,6 +341,7 @@ export class PowerlineRenderer {
         hookData.workspace?.project_dir,
       ),
       this.tmuxService.getSessionId(),
+      this.cacheTimerProvider.getCacheTimerInfo(hookData),
     ]);
     const val = <T>(r: PromiseSettledResult<T>) =>
       r.status === "fulfilled" ? r.value : null;
@@ -333,6 +353,7 @@ export class PowerlineRenderer {
       metricsInfo,
       gitInfo,
       tmuxSessionId,
+      cacheTimerInfo,
     ] = [
       val(results[0]!),
       val(results[1]!),
@@ -341,6 +362,7 @@ export class PowerlineRenderer {
       val(results[4]!),
       val(results[5]!),
       val(results[6]!),
+      val(results[7]!),
     ] as const;
 
     const tuiData: TuiData = {
@@ -351,6 +373,7 @@ export class PowerlineRenderer {
       contextInfo,
       metricsInfo,
       gitInfo,
+      cacheTimerInfo,
       tmuxSessionId,
       colors,
     };
@@ -426,6 +449,7 @@ export class PowerlineRenderer {
     todayInfo: TodayInfo | null,
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
+    cacheTimerInfo: CacheTimerInfo | null,
   ): Promise<string> {
     const colors = this.getThemeColors();
     const currentDir = hookData.workspace?.current_dir || hookData.cwd || "/";
@@ -447,6 +471,7 @@ export class PowerlineRenderer {
         todayInfo,
         contextInfo,
         metricsInfo,
+        cacheTimerInfo,
         colors,
         currentDir,
       );
@@ -473,6 +498,7 @@ export class PowerlineRenderer {
     todayInfo: TodayInfo | null,
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
+    cacheTimerInfo: CacheTimerInfo | null,
     colors: PowerlineColors,
     currentDir: string,
   ) {
@@ -587,6 +613,15 @@ export class PowerlineRenderer {
         hookData,
         colors,
         segment.config as ThinkingSegmentConfig,
+      );
+    }
+
+    if (segment.type === "cacheTimer") {
+      if (!cacheTimerInfo) return null;
+      return this.segmentRenderer.renderCacheTimer(
+        cacheTimerInfo,
+        colors,
+        segment.config as CacheTimerSegmentConfig,
       );
     }
 
@@ -726,6 +761,7 @@ export class PowerlineRenderer {
       weekly_cost: symbolSet.weekly_cost,
       agent: symbolSet.agent,
       thinking: symbolSet.thinking,
+      cache_timer: symbolSet.cache_timer,
     };
   }
 
@@ -805,6 +841,7 @@ export class PowerlineRenderer {
     const weekly = getSegmentColors("weekly");
     const agent = getSegmentColors("agent");
     const thinking = getSegmentColors("thinking");
+    const cacheTimer = getSegmentColors("cacheTimer");
 
     return {
       reset: colorSupport === "none" ? "" : RESET_CODE,
@@ -856,6 +893,9 @@ export class PowerlineRenderer {
       thinkingBg: thinking.bg,
       thinkingFg: thinking.fg,
       thinkingBold: thinking.bold,
+      cacheTimerBg: cacheTimer.bg,
+      cacheTimerFg: cacheTimer.fg,
+      cacheTimerBold: cacheTimer.bold,
       partFg: theme === "custom" ? this.resolvePartColors(convertHex) : {},
     };
   }
@@ -911,6 +951,8 @@ export class PowerlineRenderer {
         return colors.agentBg;
       case "thinking":
         return colors.thinkingBg;
+      case "cacheTimer":
+        return colors.cacheTimerBg;
       default:
         return colors.modeBg;
     }
@@ -950,6 +992,8 @@ export class PowerlineRenderer {
         return colors.agentBold;
       case "thinking":
         return colors.thinkingBold;
+      case "cacheTimer":
+        return colors.cacheTimerBold;
       default:
         return colors.modeBold;
     }

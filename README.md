@@ -426,6 +426,41 @@ Set `showEnabled: false` to hide the `On`/`Off` state, or `showEffort: false` to
 </details>
 
 <details>
+<summary><strong>Cache Timer</strong> - Shows time since last turn, tracking Claude's 5-minute prompt cache TTL</summary>
+
+Opt-in (`enabled: false` by default).
+
+```json
+"cacheTimer": {
+  "enabled": true
+}
+```
+
+**Display:** `◴ 3:42` (m:ss under 5m) &#8226; `◴ 17m` (5–59m) &#8226; `◴ 1h+` (1 hour or more)
+
+**Color tiers:** healthy green (0–3m) → yellow warn (3–5m) → red critical (5m+). Hidden when `transcript_path` is unavailable.
+
+**Anchor:** elapsed time is measured from the last user message in the transcript (matches Anthropic's cache TTL anchor), falling back to the transcript file mtime if JSONL parsing fails.
+
+**TUI:** also available in grid templates via `{cacheTimer}`, `{cacheTimer.icon}`, and `{cacheTimer.value}`.
+
+**Symbols:** `◴` Cache timer (unicode) &#8226; `C!` Cache timer (text)
+
+> **Note:** `cacheTimer` only updates when Claude Code re-runs the statusline. Set `refreshInterval` in your Claude Code `~/.claude/settings.json` `statusLine` block so the elapsed time ticks while you're idle — otherwise the timer freezes between events:
+> ```json
+> {
+>   "statusLine": {
+>     "type": "command",
+>     "command": "npx -y @owloops/claude-powerline@latest",
+>     "refreshInterval": 10
+>   }
+> }
+> ```
+> `refreshInterval` is in seconds (min 1). `10` keeps the displayed value within ~10s of reality.
+
+</details>
+
+<details>
 <summary><strong>Tmux</strong> - Shows tmux session name and window info when in tmux</summary>
 
 ```json

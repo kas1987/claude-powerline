@@ -1,11 +1,13 @@
 import { BlockProvider } from "../src/segments/block";
 import { TodayProvider } from "../src/segments/today";
 import { SegmentRenderer } from "../src/segments/renderer";
+import { CacheTimerProvider } from "../src/segments/cacheTimer";
+import { formatCacheTimerElapsed } from "../src/utils/formatters";
 import {
   loadEntriesFromProjects,
   type ClaudeHookData,
 } from "../src/utils/claude";
-import { mkdirSync, rmSync } from "fs";
+import { mkdirSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -1040,6 +1042,108 @@ describe("Segment Time Logic", () => {
       );
       expect(session.text).not.toContain("§");
       expect(session.text.startsWith(" ")).toBe(false);
+    });
+  });
+
+  describe("CacheTimer Segment", () => {
+    it("formats elapsed seconds across all thresholds", () => {
+      expect(formatCacheTimerElapsed(0)).toBe("0:00");
+      expect(formatCacheTimerElapsed(3)).toBe("0:03");
+      expect(formatCacheTimerElapsed(222)).toBe("3:42");
+      expect(formatCacheTimerElapsed(299)).toBe("4:59");
+      expect(formatCacheTimerElapsed(300)).toBe("5m");
+      expect(formatCacheTimerElapsed(1050)).toBe("17m");
+      expect(formatCacheTimerElapsed(3599)).toBe("59m");
+      expect(formatCacheTimerElapsed(3600)).toBe("1h+");
+      expect(formatCacheTimerElapsed(86400)).toBe("1h+");
+    });
+
+    it("escalates colors at 3m and 5m boundaries", () => {
+      const config = { theme: "dark", display: { style: "minimal" } } as any;
+      const symbols = { cache_timer: "◴" } as any;
+      const colors = {
+        cacheTimerBg: "#1f3a1f",
+        cacheTimerFg: "#90ee90",
+        cacheTimerBold: false,
+        contextWarningBg: "#92400e",
+        contextWarningFg: "#fbbf24",
+        contextWarningBold: false,
+        contextCriticalBg: "#991b1b",
+        contextCriticalFg: "#fca5a5",
+        contextCriticalBold: false,
+      } as any;
+      const renderer = new SegmentRenderer(config, symbols);
+
+      const healthy0 = renderer.renderCacheTimer({ elapsedSeconds: 0 }, colors);
+      expect(healthy0.bgColor).toBe(colors.cacheTimerBg);
+      expect(healthy0.fgColor).toBe(colors.cacheTimerFg);
+
+      const healthy179 = renderer.renderCacheTimer(
+        { elapsedSeconds: 179 },
+        colors,
+      );
+      expect(healthy179.bgColor).toBe(colors.cacheTimerBg);
+
+      const warn180 = renderer.renderCacheTimer(
+        { elapsedSeconds: 180 },
+        colors,
+      );
+      expect(warn180.bgColor).toBe(colors.contextWarningBg);
+      expect(warn180.fgColor).toBe(colors.contextWarningFg);
+
+      const warn299 = renderer.renderCacheTimer(
+        { elapsedSeconds: 299 },
+        colors,
+      );
+      expect(warn299.bgColor).toBe(colors.contextWarningBg);
+
+      const critical300 = renderer.renderCacheTimer(
+        { elapsedSeconds: 300 },
+        colors,
+      );
+      expect(critical300.bgColor).toBe(colors.contextCriticalBg);
+      expect(critical300.fgColor).toBe(colors.contextCriticalFg);
+
+      const critical3600 = renderer.renderCacheTimer(
+        { elapsedSeconds: 3600 },
+        colors,
+      );
+      expect(critical3600.bgColor).toBe(colors.contextCriticalBg);
+      expect(critical3600.text).toContain("1h+");
+    });
+
+    it("anchors elapsed time to the last user entry in the transcript", async () => {
+      const transcriptPath = join(tempDir, "transcript.jsonl");
+      const now = Date.now();
+      const userTs = new Date(now - 120_000).toISOString();
+      const assistantTs = new Date(now - 15_000).toISOString();
+      const content = [
+        JSON.stringify({
+          type: "user",
+          message: { role: "user" },
+          timestamp: new Date(now - 600_000).toISOString(),
+        }),
+        JSON.stringify({
+          type: "user",
+          message: { role: "user" },
+          timestamp: userTs,
+        }),
+        JSON.stringify({
+          type: "assistant",
+          message: { role: "assistant" },
+          timestamp: assistantTs,
+        }),
+      ].join("\n");
+      writeFileSync(transcriptPath, content);
+
+      const provider = new CacheTimerProvider();
+      const result = await provider.getCacheTimerInfo({
+        transcript_path: transcriptPath,
+      } as ClaudeHookData);
+
+      expect(result).not.toBeNull();
+      expect(result!.elapsedSeconds).toBeGreaterThanOrEqual(119);
+      expect(result!.elapsedSeconds).toBeLessThanOrEqual(125);
     });
   });
 });

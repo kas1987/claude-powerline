@@ -7,6 +7,8 @@ export { ContextProvider } from "./context";
 export type { ContextInfo } from "./context";
 export { MetricsProvider } from "./metrics";
 export type { MetricsInfo } from "./metrics";
+export { CacheTimerProvider } from "./cacheTimer";
+export type { CacheTimerInfo } from "./cacheTimer";
 export { SegmentRenderer } from "./renderer";
 export type {
   PowerlineSymbols,
@@ -24,4 +26,5 @@ export type {
   WeeklySegmentConfig,
   AgentSegmentConfig,
   ThinkingSegmentConfig,
+  CacheTimerSegmentConfig,
 } from "./renderer";

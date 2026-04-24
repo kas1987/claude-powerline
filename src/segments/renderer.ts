@@ -3,6 +3,7 @@ import { getEffortLevel, getThinkingEnabled } from "../utils/claude";
 import type { PowerlineColors } from "../themes";
 import type { PowerlineConfig } from "../config/loader";
 import type { BlockInfo } from "./block";
+import type { CacheTimerInfo } from "./cacheTimer";
 import type {
   UsageInfo,
   TokenBreakdown,
@@ -21,6 +22,7 @@ import {
   formatTimeSince,
   formatDuration,
   formatLongTimeRemaining,
+  formatCacheTimerElapsed,
   collapseHome,
   minutesUntilReset,
 } from "../utils/formatters";
@@ -119,6 +121,8 @@ export interface ThinkingSegmentConfig extends SegmentConfig {
   showEffort?: boolean;
 }
 
+export interface CacheTimerSegmentConfig extends SegmentConfig {}
+
 export type AnySegmentConfig =
   | SegmentConfig
   | DirectorySegmentConfig
@@ -134,7 +138,8 @@ export type AnySegmentConfig =
   | EnvSegmentConfig
   | WeeklySegmentConfig
   | AgentSegmentConfig
-  | ThinkingSegmentConfig;
+  | ThinkingSegmentConfig
+  | CacheTimerSegmentConfig;
 
 export interface PowerlineSymbols {
   right: string;
@@ -171,6 +176,7 @@ export interface PowerlineSymbols {
   weekly_cost: string;
   agent: string;
   thinking: string;
+  cache_timer: string;
 }
 
 export interface SegmentData {
@@ -895,5 +901,30 @@ export class SegmentRenderer {
       bgColor: colors.thinkingBg,
       fgColor: colors.thinkingFg,
     };
+  }
+
+  renderCacheTimer(
+    info: CacheTimerInfo,
+    colors: PowerlineColors,
+    config?: CacheTimerSegmentConfig,
+  ): SegmentData {
+    const e = info.elapsedSeconds;
+    const iconPrefix = this.leadingIcon(this.symbols.cache_timer, config);
+    const text = `${iconPrefix}${formatCacheTimerElapsed(e)}`;
+
+    let bgColor = colors.cacheTimerBg;
+    let fgColor = colors.cacheTimerFg;
+    let bold = colors.cacheTimerBold;
+    if (e >= 300) {
+      bgColor = colors.contextCriticalBg;
+      fgColor = colors.contextCriticalFg;
+      bold = colors.contextCriticalBold;
+    } else if (e >= 180) {
+      bgColor = colors.contextWarningBg;
+      fgColor = colors.contextWarningFg;
+      bold = colors.contextWarningBold;
+    }
+
+    return { text, bgColor, fgColor, bold };
   }
 }
