@@ -140,6 +140,8 @@ export CLAUDE_POWERLINE_DEBUG=1  # Enable debug logging
   - `fish`: Fish-shell style abbreviation (e.g., `~/p/claude-powerline`)
   - `basename`: Show only folder name (e.g., `claude-powerline`)
 
+In `--worktree` sessions, the directory segment automatically shows the original repo path instead of the worktree folder (no config required).
+
 </details>
 
 <details>

@@ -257,6 +257,35 @@ describe("Segment Time Logic", () => {
 
       expect(result.text).toBe("~/r/d/s/components");
     });
+
+    it("should render original repo path in --worktree sessions", () => {
+      process.env.HOME = "/home/user";
+      const hookData: ClaudeHookData = {
+        hook_event_name: "Status",
+        session_id: "test",
+        transcript_path: "/tmp/test.json",
+        cwd: "/tmp/worktrees/some-task/src/components",
+        model: { id: "claude-3-5-sonnet", display_name: "Claude" },
+        workspace: {
+          current_dir: "/tmp/worktrees/some-task/src/components",
+          project_dir: "/tmp/worktrees/some-task",
+        },
+        worktree: {
+          name: "some-task",
+          path: "/tmp/worktrees/some-task",
+          branch: "feature/x",
+          original_cwd: "/home/user/repos/claude-powerline",
+          original_branch: "main",
+        },
+      };
+
+      const result = renderer.renderDirectory(hookData, colors, {
+        enabled: true,
+        style: "fish",
+      });
+
+      expect(result.text).toBe("~/r/claude-powerline");
+    });
   });
 
   describe("Version Segment", () => {

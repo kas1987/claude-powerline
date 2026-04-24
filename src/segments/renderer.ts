@@ -204,8 +204,12 @@ export class SegmentRenderer {
     colors: PowerlineColors,
     config?: DirectorySegmentConfig,
   ): SegmentData {
-    const currentDir = hookData.workspace?.current_dir || hookData.cwd || "/";
-    const projectDir = hookData.workspace?.project_dir;
+    const worktreeOriginalCwd = hookData.worktree?.original_cwd || undefined;
+    const currentDir =
+      worktreeOriginalCwd ??
+      (hookData.workspace?.current_dir || hookData.cwd || "/");
+    const projectDir =
+      worktreeOriginalCwd ?? hookData.workspace?.project_dir;
 
     const style = config?.style ?? (config?.showBasename ? "basename" : "full");
 

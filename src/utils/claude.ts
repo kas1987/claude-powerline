@@ -53,6 +53,13 @@ export interface ClaudeHookData {
       resets_at: number;
     };
   };
+  worktree?: {
+    name: string;
+    path: string;
+    branch?: string;
+    original_cwd: string;
+    original_branch?: string;
+  };
 }
 
 export function getClaudePaths(): string[] {
