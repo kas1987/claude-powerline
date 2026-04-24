@@ -421,7 +421,9 @@ export function collectFooterParts(
     resolveIconVisibility(config, "version"),
   );
   if (versionText) {
-    parts.push(colorize(versionText, colors.versionFg, reset, colors.versionBold));
+    parts.push(
+      colorize(versionText, colors.versionFg, reset, colors.versionBold),
+    );
   }
 
   const thinkingSegConfig = config.display.lines
