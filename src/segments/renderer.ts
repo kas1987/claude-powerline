@@ -26,7 +26,8 @@ import {
   collapseHome,
   minutesUntilReset,
 } from "../utils/formatters";
-import { getBudgetStatus } from "../utils/budget";
+import { resolveBudgetDisplay } from "../utils/budget";
+import type { BudgetItemConfig } from "../config/loader";
 import { shouldShowIcon } from "../utils/icon-visibility";
 
 export interface SegmentConfig {
@@ -375,7 +376,7 @@ export class SegmentRenderer {
     usageInfo: UsageInfo,
     colors: PowerlineColors,
     config?: UsageSegmentConfig,
-  ): SegmentData {
+  ): SegmentData | null {
     const type = config?.type || "cost";
     const costSource = config?.costSource;
     const sessionBudget = this.config.budget?.session;
@@ -391,10 +392,10 @@ export class SegmentRenderer {
       usageInfo.session.tokens,
       usageInfo.session.tokenBreakdown,
       type,
-      sessionBudget?.amount,
-      sessionBudget?.warningThreshold || 80,
-      sessionBudget?.type,
+      sessionBudget,
     );
+
+    if (formattedUsage === null) return null;
 
     const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}`;
 
@@ -726,22 +727,24 @@ export class SegmentRenderer {
     todayInfo: TodayInfo,
     colors: PowerlineColors,
     configOrType?: TodaySegmentConfig | string,
-  ): SegmentData {
+  ): SegmentData | null {
     const config: TodaySegmentConfig | undefined =
       typeof configOrType === "string"
         ? ({ enabled: true, type: configOrType } as TodaySegmentConfig)
         : configOrType;
     const type = config?.type ?? "cost";
     const todayBudget = this.config.budget?.today;
-    const text = `${this.leadingIcon(this.symbols.today_cost, config)}${this.formatUsageWithBudget(
+    const formattedUsage = this.formatUsageWithBudget(
       todayInfo.cost,
       todayInfo.tokens,
       todayInfo.tokenBreakdown,
       type,
-      todayBudget?.amount,
-      todayBudget?.warningThreshold,
-      todayBudget?.type,
-    )}`;
+      todayBudget,
+    );
+
+    if (formattedUsage === null) return null;
+
+    const text = `${this.leadingIcon(this.symbols.today_cost, config)}${formattedUsage}`;
 
     return {
       text,
@@ -793,39 +796,21 @@ export class SegmentRenderer {
     tokens: number | null,
     tokenBreakdown: TokenBreakdown | null,
     type: string,
-    budget: number | undefined,
-    warningThreshold = 80,
-    budgetType?: "cost" | "tokens",
-  ): string {
+    budget?: BudgetItemConfig,
+  ): string | null {
+    const state = resolveBudgetDisplay(cost, tokens, budget);
+    if (state.suppressAll) return null;
+    if (!state.showBase) return state.percentText;
+
     const baseDisplay = this.formatUsageDisplay(
       cost,
       tokens,
       tokenBreakdown,
       type,
     );
-
-    if (budget && budget > 0) {
-      let budgetValue: number | null = null;
-
-      if (budgetType === "tokens" && tokens !== null) {
-        budgetValue = tokens;
-      } else if (budgetType === "cost" && cost !== null) {
-        budgetValue = cost;
-      } else if (!budgetType && cost !== null) {
-        budgetValue = cost;
-      }
-
-      if (budgetValue !== null) {
-        const budgetStatus = getBudgetStatus(
-          budgetValue,
-          budget,
-          warningThreshold,
-        );
-        return baseDisplay + budgetStatus.displayText;
-      }
-    }
-
-    return baseDisplay;
+    return state.percentText
+      ? `${baseDisplay} ${state.percentText}`
+      : baseDisplay;
   }
 
   renderVersion(

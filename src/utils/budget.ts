@@ -1,7 +1,16 @@
+import type { BudgetItemConfig } from "../config/loader";
+
 export interface BudgetStatus {
   percentage: number | null;
   isWarning: boolean;
   displayText: string;
+}
+
+export interface BudgetDisplayState {
+  suppressAll: boolean;
+  showBase: boolean;
+  percentText: string;
+  percentageOnly: boolean;
 }
 
 export function calculateBudgetPercentage(
@@ -43,5 +52,65 @@ export function getBudgetStatus(
     percentage,
     isWarning,
     displayText,
+  };
+}
+
+export function pickBudgetValue(
+  cost: number | null,
+  tokens: number | null,
+  budgetType: "cost" | "tokens" | undefined,
+): number | null {
+  return budgetType === "tokens" ? tokens : cost;
+}
+
+export function resolveBudgetDisplay(
+  cost: number | null,
+  tokens: number | null,
+  budget?: BudgetItemConfig,
+): BudgetDisplayState {
+  if (!budget?.amount || budget.amount <= 0) {
+    return {
+      suppressAll: false,
+      showBase: true,
+      percentText: "",
+      percentageOnly: false,
+    };
+  }
+
+  const showValue = budget.showValue ?? true;
+  const showPercentage = budget.showPercentage ?? true;
+  const budgetValue = pickBudgetValue(cost, tokens, budget.type);
+
+  if (budgetValue === null) {
+    return {
+      suppressAll: false,
+      showBase: true,
+      percentText: "",
+      percentageOnly: false,
+    };
+  }
+
+  if (!showValue && !showPercentage) {
+    return {
+      suppressAll: true,
+      showBase: false,
+      percentText: "",
+      percentageOnly: false,
+    };
+  }
+
+  const percentText = showPercentage
+    ? getBudgetStatus(
+        budgetValue,
+        budget.amount,
+        budget.warningThreshold,
+      ).displayText.trimStart()
+    : "";
+
+  return {
+    suppressAll: false,
+    showBase: showValue,
+    percentText,
+    percentageOnly: !showValue,
   };
 }

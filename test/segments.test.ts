@@ -981,8 +981,8 @@ describe("Segment Time Logic", () => {
         colors,
         config.display.lines[0].segments.session,
       );
-      expect(session.text).not.toContain("§");
-      expect(session.text.startsWith(" ")).toBe(false);
+      expect(session!.text).not.toContain("§");
+      expect(session!.text.startsWith(" ")).toBe(false);
 
       const git = renderer.renderGit(
         { branch: "main", status: "dirty", ahead: 1, behind: 2 } as any,
@@ -1040,8 +1040,8 @@ describe("Segment Time Logic", () => {
         colors,
         config.display.lines[0].segments.session,
       );
-      expect(session.text).not.toContain("§");
-      expect(session.text.startsWith(" ")).toBe(false);
+      expect(session!.text).not.toContain("§");
+      expect(session!.text.startsWith(" ")).toBe(false);
     });
   });
 
@@ -1144,6 +1144,187 @@ describe("Segment Time Logic", () => {
       expect(result).not.toBeNull();
       expect(result!.elapsedSeconds).toBeGreaterThanOrEqual(119);
       expect(result!.elapsedSeconds).toBeLessThanOrEqual(125);
+    });
+  });
+
+  describe("Budget display toggles (renderToday)", () => {
+    const symbols = { today_cost: "◱" } as any;
+    const colors = {
+      todayBg: "",
+      todayFg: "",
+      todayBold: false,
+    } as any;
+
+    function renderTodayCase(opts: {
+      cost: number | null;
+      tokens?: number | null;
+      amount?: number;
+      budgetType?: "cost" | "tokens";
+      showValue?: boolean;
+      showPercentage?: boolean;
+    }) {
+      const config = {
+        theme: "dark",
+        display: { style: "minimal", showIcons: false, lines: [] },
+        budget: {
+          today: {
+            amount: opts.amount,
+            type: opts.budgetType,
+            warningThreshold: 80,
+            showValue: opts.showValue,
+            showPercentage: opts.showPercentage,
+          },
+        },
+      } as any;
+      const renderer = new SegmentRenderer(config, symbols);
+      const todayInfo = {
+        cost: opts.cost,
+        tokens: opts.tokens ?? null,
+        tokenBreakdown: null,
+        date: "2026-04-24",
+      } as any;
+      return renderer.renderToday(todayInfo, colors, {
+        enabled: true,
+        type: "cost",
+      } as any);
+    }
+
+    const cases: Array<{
+      name: string;
+      opts: Parameters<typeof renderTodayCase>[0];
+      expected: { isNull: boolean; textContains?: string[]; textEquals?: string };
+    }> = [
+      {
+        name: "default flags (both true) -> value + percentage",
+        opts: { cost: 10, amount: 50 },
+        expected: { isNull: false, textContains: ["$10.00", "20%"] },
+      },
+      {
+        name: "showPercentage:false -> value only",
+        opts: { cost: 10, amount: 50, showPercentage: false },
+        expected: { isNull: false, textEquals: "$10.00" },
+      },
+      {
+        name: "showValue:false -> percentage only",
+        opts: { cost: 10, amount: 50, showValue: false },
+        expected: { isNull: false, textEquals: "20%" },
+      },
+      {
+        name: "both false -> null",
+        opts: {
+          cost: 10,
+          amount: 50,
+          showValue: false,
+          showPercentage: false,
+        },
+        expected: { isNull: true },
+      },
+      {
+        name: "no budget + showValue:false -> value (flags no-op)",
+        opts: { cost: 10, showValue: false, showPercentage: true },
+        expected: { isNull: false, textEquals: "$10.00" },
+      },
+      {
+        name: "budget but pct not computable (tokens-budget, no tokens) -> falls back to base",
+        opts: {
+          cost: 10,
+          tokens: null,
+          amount: 50,
+          budgetType: "tokens",
+          showValue: false,
+          showPercentage: true,
+        },
+        expected: { isNull: false, textEquals: "$10.00" },
+      },
+      {
+        name: "both false + pct not computable -> falls back to base (not null)",
+        opts: {
+          cost: 10,
+          tokens: null,
+          amount: 50,
+          budgetType: "tokens",
+          showValue: false,
+          showPercentage: false,
+        },
+        expected: { isNull: false, textEquals: "$10.00" },
+      },
+    ];
+
+    it.each(cases)("$name", ({ opts, expected }) => {
+      const result = renderTodayCase(opts);
+      if (expected.isNull) {
+        expect(result).toBeNull();
+        return;
+      }
+      expect(result).not.toBeNull();
+      if (expected.textEquals !== undefined) {
+        expect(result!.text).toBe(expected.textEquals);
+      }
+      for (const piece of expected.textContains ?? []) {
+        expect(result!.text).toContain(piece);
+      }
+    });
+
+    it("renderSession applies the same flag semantics", () => {
+      const sessionSymbols = { session_cost: "§" } as any;
+      const sessionColors = {
+        sessionBg: "",
+        sessionFg: "",
+        sessionBold: false,
+      } as any;
+
+      function renderSessionCase(opts: {
+        cost: number | null;
+        amount?: number;
+        showValue?: boolean;
+        showPercentage?: boolean;
+      }) {
+        const config = {
+          theme: "dark",
+          display: { style: "minimal", showIcons: false, lines: [] },
+          budget: {
+            session: {
+              amount: opts.amount,
+              warningThreshold: 80,
+              showValue: opts.showValue,
+              showPercentage: opts.showPercentage,
+            },
+          },
+        } as any;
+        const renderer = new SegmentRenderer(config, sessionSymbols);
+        const usageInfo = {
+          session: {
+            cost: opts.cost,
+            tokens: 0,
+            calculatedCost: opts.cost,
+            officialCost: null,
+            tokenBreakdown: null,
+          },
+        } as any;
+        return renderer.renderSession(usageInfo, sessionColors, {
+          enabled: true,
+          type: "cost",
+        } as any);
+      }
+
+      expect(renderSessionCase({ cost: 10, amount: 50 })!.text).toBe(
+        "$10.00 20%",
+      );
+      expect(
+        renderSessionCase({ cost: 10, amount: 50, showPercentage: false })!
+          .text,
+      ).toBe("$10.00");
+      expect(
+        renderSessionCase({ cost: 10, amount: 50, showValue: false })!.text,
+      ).toBe("20%");
+      expect(
+        renderSessionCase({
+          cost: 10,
+          amount: 50,
+          showValue: false,
+          showPercentage: false,
+        }),
+      ).toBeNull();
     });
   });
 });

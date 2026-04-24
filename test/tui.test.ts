@@ -1,5 +1,9 @@
 import { renderTuiPanel } from "../src/tui/renderer";
-import { resolveSegments } from "../src/tui/sections";
+import {
+  resolveSegments,
+  formatTodayParts,
+  formatSessionParts,
+} from "../src/tui/sections";
 import type { TuiData, BoxChars, RenderCtx } from "../src/tui/types";
 import type { PowerlineColors } from "../src/themes";
 import type { PowerlineConfig } from "../src/config/loader";
@@ -521,6 +525,152 @@ describe("TUI Panel Rendering", () => {
       expect(resultAbsent["cacheTimer"]).toBe("");
       expect(resultAbsent["cacheTimer.icon"]).toBe("");
       expect(resultAbsent["cacheTimer.value"]).toBe("");
+    });
+  });
+
+  describe("Budget display toggles (TUI formatTodayParts / formatSessionParts)", () => {
+    const sym = SYMBOLS as any;
+
+    function configWith(
+      segment: "today" | "session",
+      budget: {
+        amount?: number;
+        type?: "cost" | "tokens";
+        showValue?: boolean;
+        showPercentage?: boolean;
+      },
+    ): PowerlineConfig {
+      return {
+        ...DEFAULT_CONFIG,
+        display: { ...DEFAULT_CONFIG.display, style: "tui" },
+        budget: {
+          [segment]: {
+            warningThreshold: 80,
+            ...budget,
+          },
+        },
+      } as PowerlineConfig;
+    }
+
+    const todayInfo = {
+      cost: 10,
+      tokens: null as number | null,
+      tokenBreakdown: null,
+      date: "2026-04-24",
+    };
+
+    const todayInfoWithTokens = {
+      cost: 10,
+      tokens: 250,
+      tokenBreakdown: null,
+      date: "2026-04-24",
+    };
+
+    const todayCases: Array<{
+      name: string;
+      info: typeof todayInfo | typeof todayInfoWithTokens;
+      budget: Parameters<typeof configWith>[1];
+      expected: {
+        cost?: string;
+        budget?: string;
+        icon?: string;
+        label?: string;
+        budgetContains?: string;
+      };
+    }> = [
+      {
+        name: "default flags -> cost + budget (with %)",
+        info: todayInfo,
+        budget: { amount: 50 },
+        expected: { cost: "$10.00", budgetContains: "20%" },
+      },
+      {
+        name: "showPercentage:false -> cost only, budget empty",
+        info: todayInfo,
+        budget: { amount: 50, showPercentage: false },
+        expected: { cost: "$10.00", budget: "" },
+      },
+      {
+        name: "showValue:false -> cost empty, budget present, label empty",
+        info: todayInfo,
+        budget: { amount: 50, showValue: false },
+        expected: { cost: "", label: "", budgetContains: "20%" },
+      },
+      {
+        name: "both false -> all empty (icon + label too)",
+        info: todayInfo,
+        budget: { amount: 50, showValue: false, showPercentage: false },
+        expected: { icon: "", label: "", cost: "", budget: "" },
+      },
+      {
+        name: "budget.type:tokens with tokens present -> pct computed from tokens",
+        info: todayInfoWithTokens,
+        budget: { amount: 500, type: "tokens" },
+        expected: { cost: "$10.00", budgetContains: "50%" },
+      },
+      {
+        name: "no budget + showValue:false -> base value (flags no-op)",
+        info: todayInfo,
+        budget: { showValue: false, showPercentage: true },
+        expected: { cost: "$10.00", budget: "" },
+      },
+      {
+        name: "budget but pct not computable -> base value (no suppression)",
+        info: todayInfo,
+        budget: {
+          amount: 50,
+          type: "tokens",
+          showValue: false,
+          showPercentage: true,
+        },
+        expected: { cost: "$10.00", budget: "" },
+      },
+    ];
+
+    it.each(todayCases)("today: $name", ({ info, budget, expected }) => {
+      const parts = formatTodayParts(
+        info as any,
+        sym,
+        configWith("today", budget),
+        true,
+      );
+      if (expected.cost !== undefined) expect(parts.cost).toBe(expected.cost);
+      if (expected.budget !== undefined)
+        expect(parts.budget).toBe(expected.budget);
+      if (expected.icon !== undefined) expect(parts.icon).toBe(expected.icon);
+      if (expected.label !== undefined)
+        expect(parts.label).toBe(expected.label);
+      if (expected.budgetContains !== undefined)
+        expect(parts.budget).toContain(expected.budgetContains);
+    });
+
+    it("session: both false -> all-empty parts (session label blank too)", () => {
+      const usageInfo = {
+        session: {
+          cost: 5,
+          tokens: 100,
+          calculatedCost: 5,
+          officialCost: null,
+          tokenBreakdown: null,
+        },
+      };
+      const parts = formatSessionParts(
+        usageInfo as any,
+        sym,
+        configWith("session", {
+          amount: 50,
+          showValue: false,
+          showPercentage: false,
+        }),
+        true,
+      );
+      expect(parts).toEqual({
+        icon: "",
+        label: "",
+        cost: "",
+        tokens: "",
+        budget: "",
+      });
     });
   });
 });

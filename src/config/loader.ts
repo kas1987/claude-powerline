@@ -61,6 +61,8 @@ export interface BudgetItemConfig {
   amount?: number;
   warningThreshold?: number;
   type?: "cost" | "tokens";
+  showPercentage?: boolean;
+  showValue?: boolean;
 }
 
 export interface BudgetConfig {

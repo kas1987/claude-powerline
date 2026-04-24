@@ -533,8 +533,24 @@ Hidden when the variable is unset or empty.
 - `amount`: Budget limit (required for percentage display)
 - `type`: Budget type - `cost` (USD) | `tokens` (for token-based limits)
 - `warningThreshold`: Warning threshold percentage (default: 80)
+- `showPercentage`: Show the `N%` suffix (default: `true`)
+- `showValue`: Show the base cost/token value (default: `true`)
 
 **Indicators:** `25%` Normal &#8226; `+75%` Moderate (50-79%) &#8226; `!85%` Warning (80%+)
+
+**Display toggles.** For `session` and `today`, you can hide the percentage suffix, the base value, or both:
+
+```json
+"budget": {
+  "today": { "amount": 50, "showPercentage": false }
+}
+```
+
+- `showPercentage: false` hides the `N%` suffix while keeping the budget configured (e.g. for warning thresholds).
+- `showValue: false` renders only the percentage (e.g. `◱ 15%`).
+- Both `false` hides the segment entirely.
+
+A visible effect requires `amount > 0` AND a computable percentage (e.g. when `type: "tokens"`, tokens must be present). Without a budget or a computable percentage, these flags are no-ops and the segment falls back to rendering the base value. `block` accepts the same fields for config symmetry but does not render a budget suffix today, so they have no visible effect there.
 
 > [!TIP]
 > Claude's rate limits consider multiple factors beyond tokens (message count, length, attachments, model). See [Anthropic's usage documentation](https://support.anthropic.com/en/articles/11014257-about-claude-s-max-plan-usage) for details.

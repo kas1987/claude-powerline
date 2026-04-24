@@ -24,7 +24,7 @@ import {
   abbreviateFishStyle,
   formatCacheTimerElapsed,
 } from "../utils/formatters";
-import { getBudgetStatus } from "../utils/budget";
+import { resolveBudgetDisplay } from "../utils/budget";
 import { colorize, truncateAnsi } from "./primitives";
 import { getEffortLevel, getThinkingEnabled } from "../utils/claude";
 import { resolveIconVisibility } from "../utils/icon-visibility";
@@ -318,34 +318,30 @@ export function collectMetricSegments(
     );
   }
   if (data.usageInfo) {
-    segments.push(
-      colorize(
-        formatSessionSegment(
-          data.usageInfo,
-          sym,
-          config,
-          resolveIconVisibility(config, "session"),
-        ),
-        colors.sessionFg,
-        reset,
-        colors.sessionBold,
-      ),
+    const sessionStr = formatSessionSegment(
+      data.usageInfo,
+      sym,
+      config,
+      resolveIconVisibility(config, "session"),
     );
+    if (sessionStr) {
+      segments.push(
+        colorize(sessionStr, colors.sessionFg, reset, colors.sessionBold),
+      );
+    }
   }
   if (data.todayInfo) {
-    segments.push(
-      colorize(
-        formatTodaySegment(
-          data.todayInfo,
-          sym,
-          config,
-          resolveIconVisibility(config, "today"),
-        ),
-        colors.todayFg,
-        reset,
-        colors.todayBold,
-      ),
+    const todayStr = formatTodaySegment(
+      data.todayInfo,
+      sym,
+      config,
+      resolveIconVisibility(config, "today"),
     );
+    if (todayStr) {
+      segments.push(
+        colorize(todayStr, colors.todayFg, reset, colors.todayBold),
+      );
+    }
   }
 
   const activityParts = collectActivityParts(data, sym);
@@ -596,28 +592,28 @@ export function formatSessionParts(
   config: PowerlineConfig,
   iconVisible = true,
 ): Record<string, string> {
+  const state = resolveBudgetDisplay(
+    usageInfo.session.cost,
+    usageInfo.session.tokens,
+    config.budget?.session,
+  );
+
+  if (state.suppressAll) {
+    return { icon: "", label: "", cost: "", tokens: "", budget: "" };
+  }
+
   const sessionTokens = usageInfo.session.tokens;
   const tokenStr =
-    sessionTokens !== null && sessionTokens > 0
+    state.showBase && sessionTokens !== null && sessionTokens > 0
       ? formatTokenCount(sessionTokens)
       : "";
 
-  let budget = "";
-  const sessionBudget = config.budget?.session;
-  if (sessionBudget?.amount && usageInfo.session.cost !== null) {
-    budget = getBudgetStatus(
-      usageInfo.session.cost,
-      sessionBudget.amount,
-      sessionBudget.warningThreshold || 80,
-    ).displayText;
-  }
-
   return {
     icon: iconVisible ? sym.session_cost : "",
-    label: "session",
-    cost: formatCost(usageInfo.session.cost),
+    label: state.percentageOnly ? "" : "session",
+    cost: state.showBase ? formatCost(usageInfo.session.cost) : "",
     tokens: tokenStr,
-    budget,
+    budget: state.percentText ? ` ${state.percentText}` : "",
   };
 }
 
@@ -627,10 +623,26 @@ export function formatSessionSegment(
   config: PowerlineConfig,
   iconVisible = true,
 ): string {
-  const parts = formatSessionParts(usageInfo, sym, config, iconVisible);
-  let text = parts.icon ? `${parts.icon} ${parts.cost}` : (parts.cost ?? "");
-  if (parts.tokens) text += ` · ${parts.tokens}`;
-  if (parts.budget) text += parts.budget;
+  const state = resolveBudgetDisplay(
+    usageInfo.session.cost,
+    usageInfo.session.tokens,
+    config.budget?.session,
+  );
+  if (state.suppressAll) return "";
+
+  const icon = iconVisible ? sym.session_cost : "";
+
+  if (!state.showBase) {
+    return icon ? `${icon} ${state.percentText}` : state.percentText;
+  }
+
+  const costStr = formatCost(usageInfo.session.cost);
+  const sessionTokens = usageInfo.session.tokens;
+  let text = icon ? `${icon} ${costStr}` : costStr;
+  if (sessionTokens !== null && sessionTokens > 0) {
+    text += ` · ${formatTokenCount(sessionTokens)}`;
+  }
+  if (state.percentText) text += ` ${state.percentText}`;
   return text;
 }
 
@@ -640,21 +652,21 @@ export function formatTodayParts(
   config: PowerlineConfig,
   iconVisible = true,
 ): Record<string, string> {
-  let budget = "";
-  const todayBudget = config.budget?.today;
-  if (todayBudget?.amount && todayInfo.cost !== null) {
-    budget = getBudgetStatus(
-      todayInfo.cost,
-      todayBudget.amount,
-      todayBudget.warningThreshold || 80,
-    ).displayText;
+  const state = resolveBudgetDisplay(
+    todayInfo.cost,
+    todayInfo.tokens,
+    config.budget?.today,
+  );
+
+  if (state.suppressAll) {
+    return { icon: "", label: "", cost: "", budget: "" };
   }
 
   return {
     icon: iconVisible ? sym.today_cost : "",
-    cost: formatCost(todayInfo.cost),
-    label: "today",
-    budget,
+    cost: state.showBase ? formatCost(todayInfo.cost) : "",
+    label: state.percentageOnly ? "" : "today",
+    budget: state.percentText ? ` ${state.percentText}` : "",
   };
 }
 
@@ -664,11 +676,22 @@ export function formatTodaySegment(
   config: PowerlineConfig,
   iconVisible = true,
 ): string {
-  const parts = formatTodayParts(todayInfo, sym, config, iconVisible);
-  let text = parts.icon
-    ? `${parts.icon} ${parts.cost} ${parts.label}`
-    : `${parts.cost} ${parts.label}`;
-  if (parts.budget) text += parts.budget;
+  const state = resolveBudgetDisplay(
+    todayInfo.cost,
+    todayInfo.tokens,
+    config.budget?.today,
+  );
+  if (state.suppressAll) return "";
+
+  const icon = iconVisible ? sym.today_cost : "";
+
+  if (!state.showBase) {
+    return icon ? `${icon} ${state.percentText}` : state.percentText;
+  }
+
+  const costStr = formatCost(todayInfo.cost);
+  let text = icon ? `${icon} ${costStr} today` : `${costStr} today`;
+  if (state.percentText) text += ` ${state.percentText}`;
   return text;
 }
 
