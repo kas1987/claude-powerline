@@ -24,9 +24,11 @@ import {
   minutesUntilReset,
 } from "../utils/formatters";
 import { getBudgetStatus } from "../utils/budget";
+import { shouldShowIcon } from "../utils/icon-visibility";
 
 export interface SegmentConfig {
   enabled: boolean;
+  showIcon?: boolean;
 }
 
 export interface DirectorySegmentConfig extends SegmentConfig {
@@ -188,6 +190,14 @@ export class SegmentRenderer {
     private readonly symbols: PowerlineSymbols,
   ) {}
 
+  private leadingIcon(symbol: string, segConfig?: SegmentConfig): string {
+    const show = shouldShowIcon(
+      this.config.display?.showIcons,
+      segConfig?.showIcon,
+    );
+    return show ? `${symbol} ` : "";
+  }
+
   renderDirectory(
     hookData: ClaudeHookData,
     colors: PowerlineColors,
@@ -245,7 +255,15 @@ export class SegmentRenderer {
       parts.push(`[${gitInfo.operation}]`);
     }
 
-    parts.push(`${this.symbols.branch} ${gitInfo.branch}`);
+    const showBranchIcon = shouldShowIcon(
+      this.config.display?.showIcons,
+      config?.showIcon,
+    );
+    parts.push(
+      showBranchIcon
+        ? `${this.symbols.branch} ${gitInfo.branch}`
+        : gitInfo.branch,
+    );
 
     if (config?.showTag && gitInfo.tag) {
       parts.push(`${this.symbols.git_tag} ${gitInfo.tag}`);
@@ -314,12 +332,16 @@ export class SegmentRenderer {
     };
   }
 
-  renderModel(hookData: ClaudeHookData, colors: PowerlineColors): SegmentData {
+  renderModel(
+    hookData: ClaudeHookData,
+    colors: PowerlineColors,
+    config?: SegmentConfig,
+  ): SegmentData {
     const rawName = hookData.model?.display_name || "Claude";
     const modelName = formatModelName(rawName);
 
     return {
-      text: `${this.symbols.model} ${modelName}`,
+      text: `${this.leadingIcon(this.symbols.model, config)}${modelName}`,
       bgColor: colors.modelBg,
       fgColor: colors.modelFg,
     };
@@ -350,7 +372,7 @@ export class SegmentRenderer {
       sessionBudget?.type,
     );
 
-    const text = `${this.symbols.session_cost} ${formattedUsage}`;
+    const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}`;
 
     return {
       text,
@@ -366,7 +388,7 @@ export class SegmentRenderer {
   ): SegmentData {
     const showLabel = config?.showIdLabel !== false;
     const text = showLabel
-      ? `${this.symbols.session_id} ${sessionId}`
+      ? `${this.leadingIcon(this.symbols.session_id, config)}${sessionId}`
       : sessionId;
 
     return {
@@ -418,7 +440,7 @@ export class SegmentRenderer {
         };
       }
       return {
-        text: `${this.symbols.context_time} 0 (${emptyPct})`,
+        text: `${this.leadingIcon(this.symbols.context_time, config)}0 (${emptyPct})`,
         bgColor: colors.contextBg,
         fgColor: colors.contextFg,
       };
@@ -459,9 +481,10 @@ export class SegmentRenderer {
       return { text, bgColor, fgColor };
     }
 
+    const iconPrefix = this.leadingIcon(this.symbols.context_time, config);
     const text = config?.showPercentageOnly
-      ? `${this.symbols.context_time} ${pct}%`
-      : `${this.symbols.context_time} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
+      ? `${iconPrefix}${pct}%`
+      : `${iconPrefix}${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
 
     return { text, bgColor, fgColor };
   }
@@ -628,7 +651,7 @@ export class SegmentRenderer {
     }
 
     return {
-      text: `${this.symbols.block_cost} ${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
+      text: `${this.leadingIcon(this.symbols.block_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
       bgColor,
       fgColor,
     };
@@ -658,7 +681,7 @@ export class SegmentRenderer {
     }
 
     return {
-      text: `${this.symbols.weekly_cost} ${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
+      text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
       bgColor,
       fgColor,
     };
@@ -667,10 +690,15 @@ export class SegmentRenderer {
   renderToday(
     todayInfo: TodayInfo,
     colors: PowerlineColors,
-    type = "cost",
+    configOrType?: TodaySegmentConfig | string,
   ): SegmentData {
+    const config: TodaySegmentConfig | undefined =
+      typeof configOrType === "string"
+        ? ({ enabled: true, type: configOrType } as TodaySegmentConfig)
+        : configOrType;
+    const type = config?.type ?? "cost";
     const todayBudget = this.config.budget?.today;
-    const text = `${this.symbols.today_cost} ${this.formatUsageWithBudget(
+    const text = `${this.leadingIcon(this.symbols.today_cost, config)}${this.formatUsageWithBudget(
       todayInfo.cost,
       todayInfo.tokens,
       todayInfo.tokenBreakdown,
@@ -768,14 +796,14 @@ export class SegmentRenderer {
   renderVersion(
     hookData: ClaudeHookData,
     colors: PowerlineColors,
-    _config?: VersionSegmentConfig,
+    config?: VersionSegmentConfig,
   ): SegmentData | null {
     if (!hookData.version) {
       return null;
     }
 
     return {
-      text: `${this.symbols.version} v${hookData.version}`,
+      text: `${this.leadingIcon(this.symbols.version, config)}v${hookData.version}`,
       bgColor: colors.versionBg,
       fgColor: colors.versionFg,
     };
@@ -788,9 +816,10 @@ export class SegmentRenderer {
     const value = globalThis.process?.env?.[config.variable];
     if (!value) return null;
     const prefix = config.prefix ?? config.variable;
+    const iconPrefix = this.leadingIcon(this.symbols.env, config);
     const text = prefix
-      ? `${this.symbols.env} ${prefix}: ${value}`
-      : `${this.symbols.env} ${value}`;
+      ? `${iconPrefix}${prefix}: ${value}`
+      : `${iconPrefix}${value}`;
     return { text, bgColor: colors.envBg, fgColor: colors.envFg };
   }
 }

@@ -475,7 +475,7 @@ export class PowerlineRenderer {
       );
     }
     if (segment.type === "model") {
-      return this.segmentRenderer.renderModel(hookData, colors);
+      return this.segmentRenderer.renderModel(hookData, colors, segment.config);
     }
 
     if (segment.type === "git") {
@@ -644,8 +644,7 @@ export class PowerlineRenderer {
     colors: PowerlineColors,
   ) {
     if (!todayInfo) return null;
-    const todayType = config?.type || "cost";
-    return this.segmentRenderer.renderToday(todayInfo, colors, todayType);
+    return this.segmentRenderer.renderToday(todayInfo, colors, config);
   }
 
   private renderVersionSegment(

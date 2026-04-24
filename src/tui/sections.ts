@@ -25,6 +25,11 @@ import {
 } from "../utils/formatters";
 import { getBudgetStatus } from "../utils/budget";
 import { colorize, truncateAnsi } from "./primitives";
+import {
+  shouldShowIcon,
+  findSegmentShowIcon,
+  type SegmentKey,
+} from "../utils/icon-visibility";
 
 export function resolveTitleToken(
   template: string,
@@ -111,6 +116,16 @@ export function buildTitleBar(
   );
 }
 
+function resolveSegmentIconVisibility(
+  config: PowerlineConfig,
+  segKey: SegmentKey,
+): boolean {
+  return shouldShowIcon(
+    config.display?.showIcons,
+    findSegmentShowIcon(config, segKey),
+  );
+}
+
 function resolveThresholdColor(
   pct: number,
   defaultColor: string,
@@ -144,6 +159,7 @@ function buildBarString(
 export function formatContextParts(
   data: TuiData,
   sym: SymbolSet,
+  iconVisible = true,
 ): Record<string, string> {
   if (!data.contextInfo)
     return { icon: "", label: "context", bar: "", pct: "", tokens: "" };
@@ -153,7 +169,7 @@ export function formatContextParts(
   const maxStr = formatTokenCount(data.contextInfo.maxTokens);
 
   return {
-    icon: sym.context_time,
+    icon: iconVisible ? sym.context_time : "",
     label: "context",
     bar: " ",
     pct: `${usedPct}%`,
@@ -266,7 +282,12 @@ export function collectMetricSegments(
   if (data.blockInfo) {
     segments.push(
       colorize(
-        formatBlockSegment(data.blockInfo, sym, config),
+        formatBlockSegment(
+          data.blockInfo,
+          sym,
+          config,
+          resolveSegmentIconVisibility(config, "block"),
+        ),
         colors.blockFg,
         reset,
       ),
@@ -275,13 +296,26 @@ export function collectMetricSegments(
   const sevenDay = data.hookData.rate_limits?.seven_day;
   if (sevenDay) {
     segments.push(
-      colorize(formatWeeklySegment(sevenDay, sym), colors.weeklyFg, reset),
+      colorize(
+        formatWeeklySegment(
+          sevenDay,
+          sym,
+          resolveSegmentIconVisibility(config, "weekly"),
+        ),
+        colors.weeklyFg,
+        reset,
+      ),
     );
   }
   if (data.usageInfo) {
     segments.push(
       colorize(
-        formatSessionSegment(data.usageInfo, sym, config),
+        formatSessionSegment(
+          data.usageInfo,
+          sym,
+          config,
+          resolveSegmentIconVisibility(config, "session"),
+        ),
         colors.sessionFg,
         reset,
       ),
@@ -290,7 +324,12 @@ export function collectMetricSegments(
   if (data.todayInfo) {
     segments.push(
       colorize(
-        formatTodaySegment(data.todayInfo, sym, config),
+        formatTodaySegment(
+          data.todayInfo,
+          sym,
+          config,
+          resolveSegmentIconVisibility(config, "today"),
+        ),
         colors.todayFg,
         reset,
       ),
@@ -331,10 +370,15 @@ export function collectWorkspaceParts(
   sym: SymbolSet,
   reset: string,
   colors: PowerlineColors,
+  config: PowerlineConfig,
 ): string[] {
   const parts: string[] = [];
 
-  const gitStr = formatGitSegment(data, sym);
+  const gitStr = formatGitSegment(
+    data,
+    sym,
+    resolveSegmentIconVisibility(config, "git"),
+  );
   if (gitStr) parts.push(colorize(gitStr, colors.gitFg, reset));
 
   const dir = abbreviateFishStyle(getDirectoryDisplay(data.hookData));
@@ -353,9 +397,12 @@ export function collectFooterParts(
   const parts: string[] = [];
 
   if (data.hookData.version) {
+    const showVersionIcon = resolveSegmentIconVisibility(config, "version");
     parts.push(
       colorize(
-        `${sym.version} v${data.hookData.version}`,
+        showVersionIcon
+          ? `${sym.version} v${data.hookData.version}`
+          : `v${data.hookData.version}`,
         colors.versionFg,
         reset,
       ),
@@ -418,12 +465,13 @@ export function formatBlockParts(
   blockInfo: TuiData["blockInfo"] & {},
   sym: SymbolSet,
   _config: PowerlineConfig,
+  iconVisible = true,
 ): Record<string, string> {
   const value = `${Math.round(blockInfo.nativeUtilization)}%`;
   const time = formatTimeRemaining(blockInfo.timeRemaining);
 
   return {
-    icon: sym.block_cost,
+    icon: iconVisible ? sym.block_cost : "",
     label: "block",
     value,
     time,
@@ -436,9 +484,10 @@ export function formatBlockSegment(
   blockInfo: TuiData["blockInfo"] & {},
   sym: SymbolSet,
   config: PowerlineConfig,
+  iconVisible = true,
 ): string {
-  const parts = formatBlockParts(blockInfo, sym, config);
-  let text = `${parts.icon} ${parts.value}`;
+  const parts = formatBlockParts(blockInfo, sym, config, iconVisible);
+  let text = parts.icon ? `${parts.icon} ${parts.value}` : (parts.value ?? "");
   if (parts.time) text += ` · ${parts.time}`;
   if (parts.budget) text += parts.budget;
   return text;
@@ -447,18 +496,26 @@ export function formatBlockSegment(
 export function formatWeeklyParts(
   sevenDay: { used_percentage: number; resets_at: number },
   sym: SymbolSet,
+  iconVisible = true,
 ): Record<string, string> {
   const pct = `${Math.round(sevenDay.used_percentage)}%`;
   const time = formatLongTimeRemaining(minutesUntilReset(sevenDay.resets_at));
-  return { icon: sym.weekly_cost, label: "weekly", pct, time, bar: " " };
+  return {
+    icon: iconVisible ? sym.weekly_cost : "",
+    label: "weekly",
+    pct,
+    time,
+    bar: " ",
+  };
 }
 
 export function formatWeeklySegment(
   sevenDay: { used_percentage: number; resets_at: number },
   sym: SymbolSet,
+  iconVisible = true,
 ): string {
-  const parts = formatWeeklyParts(sevenDay, sym);
-  let text = `${parts.icon} ${parts.pct}`;
+  const parts = formatWeeklyParts(sevenDay, sym, iconVisible);
+  let text = parts.icon ? `${parts.icon} ${parts.pct}` : (parts.pct ?? "");
   if (parts.time) text += ` · ${parts.time}`;
   return text;
 }
@@ -467,6 +524,7 @@ export function formatSessionParts(
   usageInfo: TuiData["usageInfo"] & {},
   sym: SymbolSet,
   config: PowerlineConfig,
+  iconVisible = true,
 ): Record<string, string> {
   const sessionTokens = usageInfo.session.tokens;
   const tokenStr =
@@ -485,7 +543,7 @@ export function formatSessionParts(
   }
 
   return {
-    icon: sym.session_cost,
+    icon: iconVisible ? sym.session_cost : "",
     label: "session",
     cost: formatCost(usageInfo.session.cost),
     tokens: tokenStr,
@@ -497,9 +555,10 @@ export function formatSessionSegment(
   usageInfo: TuiData["usageInfo"] & {},
   sym: SymbolSet,
   config: PowerlineConfig,
+  iconVisible = true,
 ): string {
-  const parts = formatSessionParts(usageInfo, sym, config);
-  let text = `${parts.icon} ${parts.cost}`;
+  const parts = formatSessionParts(usageInfo, sym, config, iconVisible);
+  let text = parts.icon ? `${parts.icon} ${parts.cost}` : (parts.cost ?? "");
   if (parts.tokens) text += ` · ${parts.tokens}`;
   if (parts.budget) text += parts.budget;
   return text;
@@ -509,6 +568,7 @@ export function formatTodayParts(
   todayInfo: TuiData["todayInfo"] & {},
   sym: SymbolSet,
   config: PowerlineConfig,
+  iconVisible = true,
 ): Record<string, string> {
   let budget = "";
   const todayBudget = config.budget?.today;
@@ -521,7 +581,7 @@ export function formatTodayParts(
   }
 
   return {
-    icon: sym.today_cost,
+    icon: iconVisible ? sym.today_cost : "",
     cost: formatCost(todayInfo.cost),
     label: "today",
     budget,
@@ -532,9 +592,12 @@ export function formatTodaySegment(
   todayInfo: TuiData["todayInfo"] & {},
   sym: SymbolSet,
   config: PowerlineConfig,
+  iconVisible = true,
 ): string {
-  const parts = formatTodayParts(todayInfo, sym, config);
-  let text = `${parts.icon} ${parts.cost} ${parts.label}`;
+  const parts = formatTodayParts(todayInfo, sym, config, iconVisible);
+  let text = parts.icon
+    ? `${parts.icon} ${parts.cost} ${parts.label}`
+    : `${parts.cost} ${parts.label}`;
   if (parts.budget) text += parts.budget;
   return text;
 }
@@ -655,7 +718,11 @@ function formatActivitySegment(data: TuiData, sym: SymbolSet): string {
   return filled.length > 0 ? filled.join(" · ") : "";
 }
 
-function formatGitParts(data: TuiData, sym: SymbolSet): Record<string, string> {
+function formatGitParts(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): Record<string, string> {
   if (!data.gitInfo)
     return {
       icon: "",
@@ -691,7 +758,9 @@ function formatGitParts(data: TuiData, sym: SymbolSet): Record<string, string> {
     counts.push(`?${data.gitInfo.untracked}`);
   const working = counts.length > 0 ? `(${counts.join(" ")})` : "";
 
-  const headParts = [sym.branch, data.gitInfo.branch, statusIcon];
+  const headParts: string[] = [];
+  if (iconVisible) headParts.push(sym.branch);
+  headParts.push(data.gitInfo.branch, statusIcon);
   if (ahead) headParts.push(ahead);
   if (behind) headParts.push(behind);
 
@@ -700,7 +769,7 @@ function formatGitParts(data: TuiData, sym: SymbolSet): Record<string, string> {
   if (behind) infoParts.push(behind);
 
   return {
-    icon: sym.branch,
+    icon: iconVisible ? sym.branch : "",
     headVal: infoParts.join(" "),
     branch: data.gitInfo.branch,
     status: statusIcon,
@@ -711,10 +780,16 @@ function formatGitParts(data: TuiData, sym: SymbolSet): Record<string, string> {
   };
 }
 
-function formatGitSegment(data: TuiData, sym: SymbolSet): string {
-  const parts = formatGitParts(data, sym);
-  if (!parts.icon) return "";
-  let text = `${parts.icon} ${parts.branch} ${parts.status}`;
+function formatGitSegment(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): string {
+  const parts = formatGitParts(data, sym, iconVisible);
+  if (!parts.branch) return "";
+  let text = parts.icon
+    ? `${parts.icon} ${parts.branch} ${parts.status}`
+    : `${parts.branch} ${parts.status}`;
   if (parts.ahead) text += ` ${parts.ahead}`;
   if (parts.behind) text += `${parts.behind}`;
   if (parts.working) text += ` ${parts.working}`;
@@ -725,8 +800,12 @@ function formatDirParts(
   data: TuiData,
   config: PowerlineConfig,
   sym: SymbolSet,
+  iconVisible = true,
 ): Record<string, string> {
-  return { icon: sym.dir, value: formatDirValue(data, config) };
+  return {
+    icon: iconVisible ? sym.dir : "",
+    value: formatDirValue(data, config),
+  };
 }
 
 function formatDirValue(data: TuiData, config: PowerlineConfig): string {
@@ -747,15 +826,23 @@ function formatDirValue(data: TuiData, config: PowerlineConfig): string {
 function formatVersionParts(
   data: TuiData,
   sym: SymbolSet,
+  iconVisible = true,
 ): Record<string, string> {
   if (!data.hookData.version) return { icon: "", value: "" };
-  return { icon: sym.version, value: `v${data.hookData.version}` };
+  return {
+    icon: iconVisible ? sym.version : "",
+    value: `v${data.hookData.version}`,
+  };
 }
 
-function formatVersionSegment(data: TuiData, sym: SymbolSet): string {
-  const parts = formatVersionParts(data, sym);
-  if (!parts.icon) return "";
-  return `${parts.icon} ${parts.value}`;
+function formatVersionSegment(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): string {
+  const parts = formatVersionParts(data, sym, iconVisible);
+  if (!parts.value) return "";
+  return parts.icon ? `${parts.icon} ${parts.value}` : parts.value;
 }
 
 function formatTmuxParts(data: TuiData): Record<string, string> {
@@ -876,15 +963,31 @@ export function resolveSegments(
 
   const result: Record<string, string> = {};
 
+  const iconVisible = {
+    model: resolveSegmentIconVisibility(config, "model"),
+    context: resolveSegmentIconVisibility(config, "context"),
+    block: resolveSegmentIconVisibility(config, "block"),
+    session: resolveSegmentIconVisibility(config, "session"),
+    today: resolveSegmentIconVisibility(config, "today"),
+    weekly: resolveSegmentIconVisibility(config, "weekly"),
+    git: resolveSegmentIconVisibility(config, "git"),
+    directory: resolveSegmentIconVisibility(config, "directory"),
+    version: resolveSegmentIconVisibility(config, "version"),
+  };
+
   // Model
   const rawModelName = data.hookData.model?.display_name || "Claude";
   const modelName = formatModelName(rawModelName).toLowerCase();
   const modelColor = pf?.["model"] ?? colors.modelFg;
-  result.model = colorizeOrEmpty(`${sym.model} ${modelName}`, modelColor);
+  const modelIcon = iconVisible.model ? sym.model : "";
+  result.model = colorizeOrEmpty(
+    modelIcon ? `${modelIcon} ${modelName}` : modelName,
+    modelColor,
+  );
   addParts(
     result,
     "model",
-    { icon: sym.model, value: modelName },
+    { icon: modelIcon, value: modelName },
     colors.modelFg,
     reset,
     pf,
@@ -899,7 +1002,7 @@ export function resolveSegments(
     colors,
   );
   result.context = contextLine ?? "";
-  const ctxParts = formatContextParts(data, sym);
+  const ctxParts = formatContextParts(data, sym, iconVisible.context);
   const ctxColor = data.contextInfo
     ? resolveThresholdColor(
         data.contextInfo.usablePercentage,
@@ -913,13 +1016,13 @@ export function resolveSegments(
   if (data.blockInfo) {
     const blockColor = pf?.["block"] ?? colors.blockFg;
     result.block = colorizeOrEmpty(
-      formatBlockSegment(data.blockInfo, sym, config),
+      formatBlockSegment(data.blockInfo, sym, config, iconVisible.block),
       blockColor,
     );
     addParts(
       result,
       "block",
-      formatBlockParts(data.blockInfo, sym, config),
+      formatBlockParts(data.blockInfo, sym, config, iconVisible.block),
       colors.blockFg,
       reset,
       pf,
@@ -932,13 +1035,13 @@ export function resolveSegments(
   if (data.usageInfo) {
     const sessionColor = pf?.["session"] ?? colors.sessionFg;
     result.session = colorizeOrEmpty(
-      formatSessionSegment(data.usageInfo, sym, config),
+      formatSessionSegment(data.usageInfo, sym, config, iconVisible.session),
       sessionColor,
     );
     addParts(
       result,
       "session",
-      formatSessionParts(data.usageInfo, sym, config),
+      formatSessionParts(data.usageInfo, sym, config, iconVisible.session),
       colors.sessionFg,
       reset,
       pf,
@@ -951,13 +1054,13 @@ export function resolveSegments(
   if (data.todayInfo) {
     const todayColor = pf?.["today"] ?? colors.todayFg;
     result.today = colorizeOrEmpty(
-      formatTodaySegment(data.todayInfo, sym, config),
+      formatTodaySegment(data.todayInfo, sym, config, iconVisible.today),
       todayColor,
     );
     addParts(
       result,
       "today",
-      formatTodayParts(data.todayInfo, sym, config),
+      formatTodayParts(data.todayInfo, sym, config, iconVisible.today),
       colors.todayFg,
       reset,
       pf,
@@ -971,13 +1074,13 @@ export function resolveSegments(
   if (sevenDay) {
     const weeklyColor = pf?.["weekly"] ?? colors.weeklyFg;
     result.weekly = colorizeOrEmpty(
-      formatWeeklySegment(sevenDay, sym),
+      formatWeeklySegment(sevenDay, sym, iconVisible.weekly),
       weeklyColor,
     );
     addParts(
       result,
       "weekly",
-      formatWeeklyParts(sevenDay, sym),
+      formatWeeklyParts(sevenDay, sym, iconVisible.weekly),
       colors.weeklyFg,
       reset,
       pf,
@@ -988,8 +1091,18 @@ export function resolveSegments(
 
   // Git
   const gitColor = pf?.["git"] ?? colors.gitFg;
-  result.git = colorizeOrEmpty(formatGitSegment(data, sym), gitColor);
-  addParts(result, "git", formatGitParts(data, sym), colors.gitFg, reset, pf);
+  result.git = colorizeOrEmpty(
+    formatGitSegment(data, sym, iconVisible.git),
+    gitColor,
+  );
+  addParts(
+    result,
+    "git",
+    formatGitParts(data, sym, iconVisible.git),
+    colors.gitFg,
+    reset,
+    pf,
+  );
 
   // Dir
   const dirColor = pf?.["dir"] ?? colors.modeFg;
@@ -997,7 +1110,7 @@ export function resolveSegments(
   addParts(
     result,
     "dir",
-    formatDirParts(data, config, sym),
+    formatDirParts(data, config, sym, iconVisible.directory),
     colors.modeFg,
     reset,
     pf,
@@ -1006,13 +1119,13 @@ export function resolveSegments(
   // Version
   const versionColor = pf?.["version"] ?? colors.versionFg;
   result.version = colorizeOrEmpty(
-    formatVersionSegment(data, sym),
+    formatVersionSegment(data, sym, iconVisible.version),
     versionColor,
   );
   addParts(
     result,
     "version",
-    formatVersionParts(data, sym),
+    formatVersionParts(data, sym, iconVisible.version),
     colors.versionFg,
     reset,
     pf,

@@ -47,6 +47,7 @@ export interface DisplayConfig {
   colorCompatibility?: "auto" | "ansi" | "ansi256" | "truecolor";
   autoWrap?: boolean;
   padding?: number;
+  showIcons?: boolean;
   tui?: TuiGridConfig;
 }
 

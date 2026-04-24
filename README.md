@@ -548,6 +548,18 @@ Segments flow naturally and wrap to new lines when they exceed the terminal widt
 
 Set to `0` for compact, `1` (default) for standard spacing.
 
+**Show Icons** - hide the leading emblem on each segment for a text-only look:
+
+```json
+{
+  "display": {
+    "showIcons": false
+  }
+}
+```
+
+Default `true`. Per-segment override via `showIcon` on any segment (e.g. `"git": { "enabled": true, "showIcon": true }`) takes precedence. Status glyphs (git `● ✓ ⚠`, ahead/behind arrows), powerline separators, and metrics sub-icons are unaffected.
+
 > [!NOTE]
 > Claude Code system messages may truncate long status lines. Use `autoWrap` or manual multi-line layouts to prevent segment cutoff.
 
