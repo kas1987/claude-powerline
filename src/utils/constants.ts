@@ -36,6 +36,7 @@ export const SYMBOLS = {
   weekly_cost: "◑",
   dir: "📁",
   activity: "⚡",
+  agent: "◇",
 } as const;
 
 export const BOX_CHARS = {
@@ -173,4 +174,5 @@ export const TEXT_SYMBOLS = {
   weekly_cost: "W",
   dir: "D",
   activity: "A",
+  agent: "&",
 } as const;

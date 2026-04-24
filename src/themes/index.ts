@@ -34,6 +34,7 @@ export interface ColorTheme {
   version: SegmentColor;
   env: SegmentColor;
   weekly: SegmentColor;
+  agent: SegmentColor;
 }
 
 export interface PowerlineColors {
@@ -80,6 +81,9 @@ export interface PowerlineColors {
   weeklyBg: string;
   weeklyFg: string;
   weeklyBold: boolean;
+  agentBg: string;
+  agentFg: string;
+  agentBold: boolean;
   partFg: Record<string, string>;
 }
 

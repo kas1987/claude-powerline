@@ -54,6 +54,7 @@ export const DEFAULT_CONFIG: PowerlineConfig = {
             showLinesAdded: true,
             showLinesRemoved: true,
           },
+          agent: { enabled: true, showLabel: false },
         },
       },
     ],

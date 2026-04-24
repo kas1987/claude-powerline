@@ -391,6 +391,22 @@ Only visible when Claude Code provides native `rate_limits.seven_day` data (Clau
 </details>
 
 <details>
+<summary><strong>Agent</strong> - Shows active subagent name when Claude Code is invoked with <code>--agent</code> (hidden otherwise)</summary>
+
+```json
+"agent": {
+  "enabled": true,
+  "showLabel": false
+}
+```
+
+**Display:** `◇ researcher` (or `◇ agent: researcher` with `showLabel: true`)
+
+**Symbols:** `◇` Agent (unicode) &#8226; `&` Agent (text)
+
+</details>
+
+<details>
 <summary><strong>Tmux</strong> - Shows tmux session name and window info when in tmux</summary>
 
 ```json
@@ -750,7 +766,7 @@ Use bare segment names to render the full pre-formatted segment:
 ```
 context  block  session  today   weekly
 git      dir    version  tmux    metrics
-activity env
+activity env    agent
 ```
 
 #### Dot-Notation Subsegments
@@ -771,6 +787,7 @@ Use `segment.part` to place individual pieces of a segment into separate cells w
 | `tmux` | `label`, `value` |
 | `dir` | `value` |
 | `env` | `prefix`, `value` |
+| `agent` | `icon`, `name` |
 
 Example, block segment with a progress bar, mirroring the context layout:
 

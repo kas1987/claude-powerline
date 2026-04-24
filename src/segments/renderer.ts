@@ -109,6 +109,10 @@ export interface WeeklySegmentConfig extends SegmentConfig {
   displayStyle?: BarDisplayStyle;
 }
 
+export interface AgentSegmentConfig extends SegmentConfig {
+  showLabel?: boolean;
+}
+
 export type AnySegmentConfig =
   | SegmentConfig
   | DirectorySegmentConfig
@@ -122,7 +126,8 @@ export type AnySegmentConfig =
   | VersionSegmentConfig
   | SessionIdSegmentConfig
   | EnvSegmentConfig
-  | WeeklySegmentConfig;
+  | WeeklySegmentConfig
+  | AgentSegmentConfig;
 
 export interface PowerlineSymbols {
   right: string;
@@ -157,6 +162,7 @@ export interface PowerlineSymbols {
   env: string;
   session_id: string;
   weekly_cost: string;
+  agent: string;
 }
 
 export interface SegmentData {
@@ -837,5 +843,25 @@ export class SegmentRenderer {
       ? `${iconPrefix}${prefix}: ${value}`
       : `${iconPrefix}${value}`;
     return { text, bgColor: colors.envBg, fgColor: colors.envFg };
+  }
+
+  renderAgent(
+    hookData: ClaudeHookData,
+    colors: PowerlineColors,
+    config?: AgentSegmentConfig,
+  ): SegmentData | null {
+    const rawName = hookData.agent?.name;
+    if (typeof rawName !== "string") return null;
+    const name = rawName.trim();
+    if (!name) return null;
+
+    const iconPrefix = this.leadingIcon(this.symbols.agent, config);
+    const body = config?.showLabel ? `agent: ${name}` : name;
+
+    return {
+      text: `${iconPrefix}${body}`,
+      bgColor: colors.agentBg,
+      fgColor: colors.agentFg,
+    };
   }
 }

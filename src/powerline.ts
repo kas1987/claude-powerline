@@ -18,6 +18,7 @@ import type {
   SessionIdSegmentConfig,
   EnvSegmentConfig,
   WeeklySegmentConfig,
+  AgentSegmentConfig,
 } from "./segments";
 import type { BlockInfo } from "./segments/block";
 import type { TodayInfo } from "./segments/today";
@@ -572,6 +573,14 @@ export class PowerlineRenderer {
       );
     }
 
+    if (segment.type === "agent") {
+      return this.segmentRenderer.renderAgent(
+        hookData,
+        colors,
+        segment.config as AgentSegmentConfig,
+      );
+    }
+
     return null;
   }
 
@@ -706,6 +715,7 @@ export class PowerlineRenderer {
       env: symbolSet.env,
       session_id: symbolSet.session_id,
       weekly_cost: symbolSet.weekly_cost,
+      agent: symbolSet.agent,
     };
   }
 
@@ -783,6 +793,7 @@ export class PowerlineRenderer {
     const version = getSegmentColors("version");
     const env = getSegmentColors("env");
     const weekly = getSegmentColors("weekly");
+    const agent = getSegmentColors("agent");
 
     return {
       reset: colorSupport === "none" ? "" : RESET_CODE,
@@ -828,6 +839,9 @@ export class PowerlineRenderer {
       weeklyBg: weekly.bg,
       weeklyFg: weekly.fg,
       weeklyBold: weekly.bold,
+      agentBg: agent.bg,
+      agentFg: agent.fg,
+      agentBold: agent.bold,
       partFg: theme === "custom" ? this.resolvePartColors(convertHex) : {},
     };
   }
@@ -879,6 +893,8 @@ export class PowerlineRenderer {
         return colors.envBg;
       case "weekly":
         return colors.weeklyBg;
+      case "agent":
+        return colors.agentBg;
       default:
         return colors.modeBg;
     }
@@ -914,6 +930,8 @@ export class PowerlineRenderer {
         return colors.envBold;
       case "weekly":
         return colors.weeklyBold;
+      case "agent":
+        return colors.agentBold;
       default:
         return colors.modeBold;
     }

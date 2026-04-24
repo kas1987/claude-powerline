@@ -882,6 +882,36 @@ function formatVersionSegment(
   return parts.icon ? `${parts.icon} ${parts.value}` : parts.value;
 }
 
+function formatAgentParts(
+  data: TuiData,
+  sym: SymbolSet,
+  iconVisible = true,
+): Record<string, string> {
+  const raw = data.hookData.agent?.name;
+  if (typeof raw !== "string") return { icon: "", name: "" };
+  const name = raw.trim();
+  if (!name) return { icon: "", name: "" };
+  return {
+    icon: iconVisible ? sym.agent : "",
+    name,
+  };
+}
+
+function formatAgentSegment(
+  data: TuiData,
+  sym: SymbolSet,
+  config: PowerlineConfig,
+  iconVisible = true,
+): string {
+  const parts = formatAgentParts(data, sym, iconVisible);
+  if (!parts.name) return "";
+  const agentConfig = config.display.lines
+    .map((line) => line.segments.agent)
+    .find((a) => a?.enabled);
+  const body = agentConfig?.showLabel ? `agent: ${parts.name}` : parts.name;
+  return parts.icon ? `${parts.icon} ${body}` : body;
+}
+
 function formatTmuxParts(data: TuiData): Record<string, string> {
   if (!data.tmuxSessionId) return { label: "", value: "" };
   return { label: "tmux", value: data.tmuxSessionId };
@@ -1014,6 +1044,7 @@ export function resolveSegments(
     git: resolveIconVisibility(config, "git"),
     directory: resolveIconVisibility(config, "directory"),
     version: resolveIconVisibility(config, "version"),
+    agent: resolveIconVisibility(config, "agent"),
   };
 
   // Model
@@ -1258,6 +1289,23 @@ export function resolveSegments(
     reset,
     pf,
     colors.envBold,
+  );
+
+  // Agent
+  const agentColor = pf?.["agent"] ?? colors.agentFg;
+  result.agent = colorizeOrEmpty(
+    formatAgentSegment(data, sym, config, iconVisible.agent),
+    agentColor,
+    colors.agentBold,
+  );
+  addParts(
+    result,
+    "agent",
+    formatAgentParts(data, sym, iconVisible.agent),
+    colors.agentFg,
+    reset,
+    pf,
+    colors.agentBold,
   );
 
   // Apply segment templates: resolve items and compose default value

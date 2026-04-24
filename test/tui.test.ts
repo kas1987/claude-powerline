@@ -51,6 +51,9 @@ const PLAIN_COLORS: PowerlineColors = {
   weeklyBg: "",
   weeklyFg: "",
   weeklyBold: false,
+  agentBg: "",
+  agentFg: "",
+  agentBold: false,
   partFg: {},
 };
 

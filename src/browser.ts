@@ -47,6 +47,7 @@ export type {
   SessionIdSegmentConfig,
   EnvSegmentConfig,
   WeeklySegmentConfig,
+  AgentSegmentConfig,
   PowerlineSymbols,
   SegmentData,
   BarDisplayStyle,

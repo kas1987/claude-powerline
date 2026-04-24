@@ -51,6 +51,7 @@ const SEGMENT_NAME_LIST = [
   "metrics",
   "activity",
   "env",
+  "agent",
 ] as const;
 
 export type SegmentName = (typeof SEGMENT_NAME_LIST)[number];
@@ -103,6 +104,7 @@ export const SEGMENT_PARTS: Record<SegmentName, readonly string[]> = {
   tmux: ["label", "value"],
   dir: ["icon", "value"],
   env: ["prefix", "value"],
+  agent: ["icon", "name"],
 } as const;
 
 export function isValidSegmentRef(name: string): boolean {

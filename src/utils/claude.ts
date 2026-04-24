@@ -60,6 +60,9 @@ export interface ClaudeHookData {
     original_cwd: string;
     original_branch?: string;
   };
+  agent?: {
+    name: string;
+  };
 }
 
 export function getClaudePaths(): string[] {

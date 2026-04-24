@@ -312,6 +312,52 @@ describe("Segment Time Logic", () => {
     });
   });
 
+  describe("Agent Segment", () => {
+    const config = { theme: "dark", display: { style: "minimal" } } as any;
+    const symbols = { agent: "◇" } as any;
+    const colors = { agentBg: "#2a2a4a", agentFg: "#b0a8e0" } as any;
+
+    it("should render agent name when present", () => {
+      const renderer = new SegmentRenderer(config, symbols);
+      const hookData: ClaudeHookData = {
+        hook_event_name: "Status",
+        session_id: "test",
+        transcript_path: "/tmp/test.json",
+        cwd: "/test",
+        model: { id: "claude-sonnet-4-6", display_name: "Sonnet" },
+        workspace: { current_dir: "/test", project_dir: "/test" },
+        agent: { name: "researcher" },
+      };
+
+      const result = renderer.renderAgent(hookData, colors, { enabled: true });
+      expect(result).not.toBeNull();
+      expect(result!.text).toBe("◇ researcher");
+      expect(result!.bgColor).toBe(colors.agentBg);
+      expect(result!.fgColor).toBe(colors.agentFg);
+    });
+
+    it("should return null when agent is absent or name is blank", () => {
+      const renderer = new SegmentRenderer(config, symbols);
+      const base: ClaudeHookData = {
+        hook_event_name: "Status",
+        session_id: "test",
+        transcript_path: "/tmp/test.json",
+        cwd: "/test",
+        model: { id: "claude-sonnet-4-6", display_name: "Sonnet" },
+        workspace: { current_dir: "/test", project_dir: "/test" },
+      };
+
+      expect(renderer.renderAgent(base, colors, { enabled: true })).toBeNull();
+      expect(
+        renderer.renderAgent(
+          { ...base, agent: { name: "   " } },
+          colors,
+          { enabled: true },
+        ),
+      ).toBeNull();
+    });
+  });
+
   describe("Env Segment", () => {
     const config = { theme: "dark", display: { style: "minimal" } } as any;
     const symbols = { env: "⚙" } as any;
