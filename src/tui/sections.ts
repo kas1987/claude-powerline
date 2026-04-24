@@ -25,11 +25,7 @@ import {
 } from "../utils/formatters";
 import { getBudgetStatus } from "../utils/budget";
 import { colorize, truncateAnsi } from "./primitives";
-import {
-  shouldShowIcon,
-  findSegmentShowIcon,
-  type SegmentKey,
-} from "../utils/icon-visibility";
+import { resolveIconVisibility } from "../utils/icon-visibility";
 
 export function resolveTitleToken(
   template: string,
@@ -113,16 +109,6 @@ export function buildTitleBar(
     box.horizontal.repeat(fillCount) +
     finalRight +
     box.topRight
-  );
-}
-
-function resolveSegmentIconVisibility(
-  config: PowerlineConfig,
-  segKey: SegmentKey,
-): boolean {
-  return shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, segKey),
   );
 }
 
@@ -286,7 +272,7 @@ export function collectMetricSegments(
           data.blockInfo,
           sym,
           config,
-          resolveSegmentIconVisibility(config, "block"),
+          resolveIconVisibility(config, "block"),
         ),
         colors.blockFg,
         reset,
@@ -300,7 +286,7 @@ export function collectMetricSegments(
         formatWeeklySegment(
           sevenDay,
           sym,
-          resolveSegmentIconVisibility(config, "weekly"),
+          resolveIconVisibility(config, "weekly"),
         ),
         colors.weeklyFg,
         reset,
@@ -314,7 +300,7 @@ export function collectMetricSegments(
           data.usageInfo,
           sym,
           config,
-          resolveSegmentIconVisibility(config, "session"),
+          resolveIconVisibility(config, "session"),
         ),
         colors.sessionFg,
         reset,
@@ -328,7 +314,7 @@ export function collectMetricSegments(
           data.todayInfo,
           sym,
           config,
-          resolveSegmentIconVisibility(config, "today"),
+          resolveIconVisibility(config, "today"),
         ),
         colors.todayFg,
         reset,
@@ -377,7 +363,7 @@ export function collectWorkspaceParts(
   const gitStr = formatGitSegment(
     data,
     sym,
-    resolveSegmentIconVisibility(config, "git"),
+    resolveIconVisibility(config, "git"),
   );
   if (gitStr) parts.push(colorize(gitStr, colors.gitFg, reset));
 
@@ -397,7 +383,7 @@ export function collectFooterParts(
   const parts: string[] = [];
 
   if (data.hookData.version) {
-    const showVersionIcon = resolveSegmentIconVisibility(config, "version");
+    const showVersionIcon = resolveIconVisibility(config, "version");
     parts.push(
       colorize(
         showVersionIcon
@@ -964,15 +950,15 @@ export function resolveSegments(
   const result: Record<string, string> = {};
 
   const iconVisible = {
-    model: resolveSegmentIconVisibility(config, "model"),
-    context: resolveSegmentIconVisibility(config, "context"),
-    block: resolveSegmentIconVisibility(config, "block"),
-    session: resolveSegmentIconVisibility(config, "session"),
-    today: resolveSegmentIconVisibility(config, "today"),
-    weekly: resolveSegmentIconVisibility(config, "weekly"),
-    git: resolveSegmentIconVisibility(config, "git"),
-    directory: resolveSegmentIconVisibility(config, "directory"),
-    version: resolveSegmentIconVisibility(config, "version"),
+    model: resolveIconVisibility(config, "model"),
+    context: resolveIconVisibility(config, "context"),
+    block: resolveIconVisibility(config, "block"),
+    session: resolveIconVisibility(config, "session"),
+    today: resolveIconVisibility(config, "today"),
+    weekly: resolveIconVisibility(config, "weekly"),
+    git: resolveIconVisibility(config, "git"),
+    directory: resolveIconVisibility(config, "directory"),
+    version: resolveIconVisibility(config, "version"),
   };
 
   // Model

@@ -1,7 +1,7 @@
 import type { RenderCtx } from "./types";
 
 import { formatCost } from "../utils/formatters";
-import { shouldShowIcon, findSegmentShowIcon } from "../utils/icon-visibility";
+import { resolveIconVisibility } from "../utils/icon-visibility";
 import {
   contentRow,
   divider,
@@ -83,22 +83,10 @@ export function renderMediumMetrics(ctx: RenderCtx): void {
   const line1Parts: string[] = [];
   const line2Parts: string[] = [];
 
-  const showBlockIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "block"),
-  );
-  const showWeeklyIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "weekly"),
-  );
-  const showTodayIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "today"),
-  );
-  const showSessionIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "session"),
-  );
+  const showBlockIcon = resolveIconVisibility(config, "block");
+  const showWeeklyIcon = resolveIconVisibility(config, "weekly");
+  const showTodayIcon = resolveIconVisibility(config, "today");
+  const showSessionIcon = resolveIconVisibility(config, "session");
 
   if (data.blockInfo) {
     line1Parts.push(
@@ -216,22 +204,10 @@ export function renderNarrowMetrics(ctx: RenderCtx): void {
     reset,
     colors,
   } = ctx;
-  const showBlockIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "block"),
-  );
-  const showWeeklyIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "weekly"),
-  );
-  const showSessionIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "session"),
-  );
-  const showTodayIcon = shouldShowIcon(
-    config.display?.showIcons,
-    findSegmentShowIcon(config, "today"),
-  );
+  const showBlockIcon = resolveIconVisibility(config, "block");
+  const showWeeklyIcon = resolveIconVisibility(config, "weekly");
+  const showSessionIcon = resolveIconVisibility(config, "session");
+  const showTodayIcon = resolveIconVisibility(config, "today");
 
   if (data.blockInfo) {
     lines.push(
