@@ -1,3 +1,16 @@
+# [1.26.0](https://github.com/Owloops/claude-powerline/compare/v1.25.2...v1.26.0) (2026-04-28)
+
+
+### Features
+
+* **agent:** add agent.name segment for subagent sessions ([20926b4](https://github.com/Owloops/claude-powerline/commit/20926b457a3a4b114802e7dd2b4caa5ddef64d6f))
+* **budget:** add showPercentage / showValue toggles on BudgetItemConfig ([2a86786](https://github.com/Owloops/claude-powerline/commit/2a8678694a03dbd9c16661849568a9e3de0938c7)), closes [#73](https://github.com/Owloops/claude-powerline/issues/73)
+* **cache-timer:** add cacheTimer segment showing time since last turn ([820ff6c](https://github.com/Owloops/claude-powerline/commit/820ff6cadb6bb15f71dcf08ad08d8a606c1e1c99))
+* **config:** add showIcons / per-segment showIcon option ([50e803f](https://github.com/Owloops/claude-powerline/commit/50e803fb5b66c08b022919135a5e84b4a87b4834)), closes [#72](https://github.com/Owloops/claude-powerline/issues/72)
+* **directory:** show repo path in --worktree sessions ([6020bd0](https://github.com/Owloops/claude-powerline/commit/6020bd05ef0b4333ac88fa0fa73f42cb3df8e582))
+* **theme:** add optional bold to segment color entries ([1f1ff29](https://github.com/Owloops/claude-powerline/commit/1f1ff291140124ee9b0efb5a2a9f3368d1c66c73))
+* **thinking:** combined extended-thinking segment with effort ([be4e705](https://github.com/Owloops/claude-powerline/commit/be4e7050ce7d677ba8fe66da13518788e554eee0))
+
 ## [1.25.2](https://github.com/Owloops/claude-powerline/compare/v1.25.1...v1.25.2) (2026-04-20)
 
 
