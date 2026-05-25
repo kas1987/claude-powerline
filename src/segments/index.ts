@@ -27,4 +27,7 @@ export type {
   AgentSegmentConfig,
   ThinkingSegmentConfig,
   CacheTimerSegmentConfig,
+  OverheadSegmentConfig,
+  CostWatchSegmentConfig,
+  HarnessSegmentConfig,
 } from "./renderer";

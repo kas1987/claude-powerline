@@ -56,6 +56,9 @@ const SEGMENT_NAME_LIST = [
   "agent",
   "thinking",
   "cacheTimer",
+  "overhead",
+  "costWatch",
+  "harness",
 ] as const;
 
 export type SegmentName = (typeof SEGMENT_NAME_LIST)[number];
@@ -111,6 +114,9 @@ export const SEGMENT_PARTS: Record<SegmentName, readonly string[]> = {
   agent: ["icon", "name"],
   thinking: ["icon", "enabled", "effort"],
   cacheTimer: ["icon", "value"],
+  overhead: ["icon", "total", "gap", "level"],
+  costWatch: ["icon", "cost", "opusPct", "alerts"],
+  harness: ["icon", "tier", "hash"],
 } as const;
 
 export function isValidSegmentRef(name: string): boolean {

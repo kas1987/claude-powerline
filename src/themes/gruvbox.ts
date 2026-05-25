@@ -18,6 +18,11 @@ export const gruvboxTheme: ColorTheme = {
   agent: { bg: "#504945", fg: "#d3869b" },
   thinking: { bg: "#3c3046", fg: "#d3869b" },
   cacheTimer: { bg: "#3c3836", fg: "#b8bb26" },
+  overhead: { bg: "#504945", fg: "#ebdbb2" },
+  costWatch: { bg: "#3c3836", fg: "#b8bb26" },
+  costWatchWarning: { bg: "#d79921", fg: "#282828" },
+  costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
+  harness: { bg: "#504945", fg: "#d3869b" }
 };
 
 export const gruvboxAnsi256Theme: ColorTheme = {
@@ -38,6 +43,11 @@ export const gruvboxAnsi256Theme: ColorTheme = {
   agent: { bg: "#6c6c6c", fg: "#d787af" },
   thinking: { bg: "#444444", fg: "#d787af" },
   cacheTimer: { bg: "#444444", fg: "#afaf00" },
+  overhead: { bg: "#504945", fg: "#ebdbb2" },
+  costWatch: { bg: "#3c3836", fg: "#b8bb26" },
+  costWatchWarning: { bg: "#d79921", fg: "#282828" },
+  costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
+  harness: { bg: "#504945", fg: "#d3869b" }
 };
 
 export const gruvboxAnsiTheme: ColorTheme = {
@@ -58,4 +68,9 @@ export const gruvboxAnsiTheme: ColorTheme = {
   agent: { bg: "#808080", fg: "#ff87af" },
   thinking: { bg: "#808080", fg: "#ff87af" },
   cacheTimer: { bg: "#585858", fg: "#ffff00" },
+  overhead: { bg: "#504945", fg: "#ebdbb2" },
+  costWatch: { bg: "#3c3836", fg: "#b8bb26" },
+  costWatchWarning: { bg: "#d79921", fg: "#282828" },
+  costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
+  harness: { bg: "#504945", fg: "#d3869b" }
 };

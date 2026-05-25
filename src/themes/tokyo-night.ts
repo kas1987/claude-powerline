@@ -18,6 +18,11 @@ export const tokyoNightTheme: ColorTheme = {
   agent: { bg: "#2d2b55", fg: "#bb9af7" },
   thinking: { bg: "#2f2a3d", fg: "#bb9af7" },
   cacheTimer: { bg: "#1f2e2a", fg: "#9ece6a" },
+  overhead: { bg: "#2f334d", fg: "#82aaff" },
+  costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
+  costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
+  costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
+  harness: { bg: "#2d2b55", fg: "#bb9af7" }
 };
 
 export const tokyoNightAnsi256Theme: ColorTheme = {
@@ -38,6 +43,11 @@ export const tokyoNightAnsi256Theme: ColorTheme = {
   agent: { bg: "#5f5f87", fg: "#af87ff" },
   thinking: { bg: "#444460", fg: "#d787ff" },
   cacheTimer: { bg: "#1c3a30", fg: "#87d787" },
+  overhead: { bg: "#2f334d", fg: "#82aaff" },
+  costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
+  costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
+  costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
+  harness: { bg: "#2d2b55", fg: "#bb9af7" }
 };
 
 export const tokyoNightAnsiTheme: ColorTheme = {
@@ -58,4 +68,9 @@ export const tokyoNightAnsiTheme: ColorTheme = {
   agent: { bg: "#5f5faf", fg: "#d787ff" },
   thinking: { bg: "#585870", fg: "#d787ff" },
   cacheTimer: { bg: "#305050", fg: "#00d787" },
+  overhead: { bg: "#2f334d", fg: "#82aaff" },
+  costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
+  costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
+  costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
+  harness: { bg: "#2d2b55", fg: "#bb9af7" }
 };

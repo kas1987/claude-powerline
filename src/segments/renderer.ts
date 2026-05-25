@@ -133,6 +133,21 @@ export interface CacheTimerSegmentConfig extends SegmentConfig {
   ttlSeconds?: number;
 }
 
+export interface OverheadSegmentConfig extends SegmentConfig {
+  showTiers?: boolean;
+  showExtended?: boolean;
+  showDynamicLoad?: boolean;
+}
+
+export interface CostWatchSegmentConfig extends SegmentConfig {
+  showAlerts?: boolean;
+  showCostTotal?: boolean;
+}
+
+export interface HarnessSegmentConfig extends SegmentConfig {
+  showPromptHash?: boolean;
+}
+
 export type AnySegmentConfig =
   | SegmentConfig
   | DirectorySegmentConfig
@@ -149,7 +164,10 @@ export type AnySegmentConfig =
   | WeeklySegmentConfig
   | AgentSegmentConfig
   | ThinkingSegmentConfig
-  | CacheTimerSegmentConfig;
+  | CacheTimerSegmentConfig
+  | OverheadSegmentConfig
+  | CostWatchSegmentConfig
+  | HarnessSegmentConfig;
 
 export interface PowerlineSymbols {
   right: string;
@@ -187,6 +205,9 @@ export interface PowerlineSymbols {
   agent: string;
   thinking: string;
   cache_timer: string;
+  overhead: string;
+  costWatch: string;
+  harness: string;
 }
 
 export interface SegmentData {
@@ -945,5 +966,123 @@ export class SegmentRenderer {
     }
 
     return { text, bgColor, fgColor, bold };
+  }
+
+  renderOverhead(
+    info: import("./overhead").OverheadInfo | null,
+    colors: PowerlineColors,
+    config?: OverheadSegmentConfig,
+  ): SegmentData | null {
+    if (!info) return null;
+
+    const totalStr = info.totalTokens >= 1000
+      ? `${(info.totalTokens / 1000).toFixed(1)}k`
+      : `${info.totalTokens}`;
+
+    let levelColor = colors.overheadFg;
+    let levelBg = colors.overheadBg;
+    let bold = colors.overheadBold;
+
+    if (info.level === "alert") {
+      levelBg = colors.contextCriticalBg;
+      levelColor = colors.contextCriticalFg;
+      bold = colors.contextCriticalBold;
+    } else if (info.level === "warn") {
+      levelBg = colors.contextWarningBg;
+      levelColor = colors.contextWarningFg;
+      bold = colors.contextWarningBold;
+    }
+
+    const parts: string[] = [
+      `${this.leadingIcon(this.symbols.overhead, config)}${totalStr}`,
+    ];
+
+    if (config?.showTiers !== false) {
+      parts.push(`T1:${info.t1}`);
+    }
+
+    if (config?.showExtended && info.gapTokens > 0) {
+      const gapStr = info.gapTokens >= 1000
+        ? `${(info.gapTokens / 1000).toFixed(1)}k`
+        : `${info.gapTokens}`;
+      parts.push(`Δ${gapStr}`);
+    }
+
+    if (config?.showDynamicLoad && info.dynamicLoad > 0) {
+      const dynStr = info.dynamicLoad >= 1000
+        ? `${(info.dynamicLoad / 1000).toFixed(1)}k`
+        : `${info.dynamicLoad}`;
+      parts.push(`+${dynStr}`);
+    }
+
+    return {
+      text: parts.join(" "),
+      bgColor: levelBg,
+      fgColor: levelColor,
+      bold,
+    };
+  }
+
+  renderCostWatch(
+    info: import("./costWatch").CostWatchInfo | null,
+    colors: PowerlineColors,
+    config?: CostWatchSegmentConfig,
+  ): SegmentData | null {
+    if (!info) return null;
+
+    let bgColor = colors.costWatchBg;
+    let fgColor = colors.costWatchFg;
+    let bold = colors.costWatchBold;
+
+    if (info.level === "alert") {
+      bgColor = colors.costWatchCriticalBg;
+      fgColor = colors.costWatchCriticalFg;
+      bold = colors.costWatchCriticalBold;
+    } else if (info.level === "warn") {
+      bgColor = colors.costWatchWarningBg;
+      fgColor = colors.costWatchWarningFg;
+      bold = colors.costWatchWarningBold;
+    }
+
+    const parts: string[] = [
+      `${this.leadingIcon(this.symbols.costWatch, config)}$${info.costTotal.toFixed(0)}`,
+    ];
+
+    const opusPct = Math.round(info.opusTurnShare * 100);
+    parts.push(`OPUS ${opusPct}%`);
+
+    if (config?.showAlerts !== false && info.alerts.length > 0) {
+      parts.push(`!${info.alerts.length}`);
+    }
+
+    return {
+      text: parts.join(" "),
+      bgColor,
+      fgColor,
+      bold,
+    };
+  }
+
+  renderHarness(
+    info: import("./harness").HarnessInfo | null,
+    colors: PowerlineColors,
+    config?: HarnessSegmentConfig,
+  ): SegmentData | null {
+    if (!info) return null;
+
+    const parts: string[] = [
+      `${this.leadingIcon(this.symbols.harness, config)}${info.tier}`,
+    ];
+
+    if (config?.showPromptHash && info.promptHash) {
+      parts.push(info.promptHash.slice(0, 7));
+    }
+
+    return {
+      text: parts.join(" "),
+      bgColor: colors.harnessBg,
+      fgColor: colors.harnessFg,
+      bold: colors.harnessBold,
+    };
   }
 }

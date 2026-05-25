@@ -18,6 +18,11 @@ export const nordTheme: ColorTheme = {
   agent: { bg: "#4c566a", fg: "#b48ead" },
   thinking: { bg: "#3b4252", fg: "#b48ead" },
   cacheTimer: { bg: "#3b4252", fg: "#a3be8c" },
+  overhead: { bg: "#434c5e", fg: "#d8dee9" },
+  costWatch: { bg: "#3b4252", fg: "#a3be8c" },
+  costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
+  costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
+  harness: { bg: "#4c566a", fg: "#b48ead" }
 };
 
 export const nordAnsi256Theme: ColorTheme = {
@@ -38,6 +43,11 @@ export const nordAnsi256Theme: ColorTheme = {
   agent: { bg: "#6c6c6c", fg: "#d787af" },
   thinking: { bg: "#4e4e4e", fg: "#d787af" },
   cacheTimer: { bg: "#4e4e4e", fg: "#87af87" },
+  overhead: { bg: "#434c5e", fg: "#d8dee9" },
+  costWatch: { bg: "#3b4252", fg: "#a3be8c" },
+  costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
+  costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
+  harness: { bg: "#4c566a", fg: "#b48ead" }
 };
 
 export const nordAnsiTheme: ColorTheme = {
@@ -58,4 +68,9 @@ export const nordAnsiTheme: ColorTheme = {
   agent: { bg: "#808080", fg: "#ff87af" },
   thinking: { bg: "#585858", fg: "#ff87d7" },
   cacheTimer: { bg: "#585858", fg: "#87d787" },
+  overhead: { bg: "#434c5e", fg: "#d8dee9" },
+  costWatch: { bg: "#3b4252", fg: "#a3be8c" },
+  costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
+  costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
+  harness: { bg: "#4c566a", fg: "#b48ead" }
 };

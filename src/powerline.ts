@@ -21,10 +21,16 @@ import type {
   AgentSegmentConfig,
   ThinkingSegmentConfig,
   CacheTimerSegmentConfig,
+  OverheadSegmentConfig,
+  CostWatchSegmentConfig,
+  HarnessSegmentConfig,
 } from "./segments";
 import type { BlockInfo } from "./segments/block";
 import type { TodayInfo } from "./segments/today";
 import type { CacheTimerInfo } from "./segments/cacheTimer";
+import type { OverheadInfo } from "./segments/overhead";
+import type { CostWatchInfo } from "./segments/costWatch";
+import type { HarnessInfo } from "./segments/harness";
 import type { TuiData } from "./tui";
 
 import {
@@ -47,6 +53,9 @@ import {
 import { BlockProvider } from "./segments/block";
 import { TodayProvider } from "./segments/today";
 import { CacheTimerProvider } from "./segments/cacheTimer";
+import { OverheadProvider } from "./segments/overhead";
+import { CostWatchProvider } from "./segments/costWatch";
+import { HarnessProvider } from "./segments/harness";
 import {
   SYMBOLS,
   TEXT_SYMBOLS,
@@ -76,6 +85,9 @@ export class PowerlineRenderer {
   private _tmuxService?: TmuxService;
   private _metricsProvider?: MetricsProvider;
   private _cacheTimerProvider?: CacheTimerProvider;
+  private _overheadProvider?: OverheadProvider;
+  private _costWatchProvider?: CostWatchProvider;
+  private _harnessProvider?: HarnessProvider;
   private _segmentRenderer?: SegmentRenderer;
 
   constructor(private readonly config: PowerlineConfig) {
@@ -138,6 +150,27 @@ export class PowerlineRenderer {
     return this._cacheTimerProvider;
   }
 
+  private get overheadProvider(): OverheadProvider {
+    if (!this._overheadProvider) {
+      this._overheadProvider = new OverheadProvider();
+    }
+    return this._overheadProvider;
+  }
+
+  private get costWatchProvider(): CostWatchProvider {
+    if (!this._costWatchProvider) {
+      this._costWatchProvider = new CostWatchProvider();
+    }
+    return this._costWatchProvider;
+  }
+
+  private get harnessProvider(): HarnessProvider {
+    if (!this._harnessProvider) {
+      this._harnessProvider = new HarnessProvider();
+    }
+    return this._harnessProvider;
+  }
+
   private get segmentRenderer(): SegmentRenderer {
     if (!this._segmentRenderer) {
       this._segmentRenderer = new SegmentRenderer(this.config, this.symbols);
@@ -184,6 +217,18 @@ export class PowerlineRenderer {
       ? await this.cacheTimerProvider.getCacheTimerInfo(hookData)
       : null;
 
+    const overheadInfo = this.needsSegmentInfo("overhead")
+      ? await this.overheadProvider.getOverheadInfo(hookData)
+      : null;
+
+    const costWatchInfo = this.needsSegmentInfo("costWatch")
+      ? await this.costWatchProvider.getCostWatchInfo(hookData)
+      : null;
+
+    const harnessInfo = this.needsSegmentInfo("harness")
+      ? await this.harnessProvider.getHarnessInfo(hookData)
+      : null;
+
     if (this.config.display.autoWrap) {
       return this.generateAutoWrapStatusline(
         hookData,
@@ -193,6 +238,9 @@ export class PowerlineRenderer {
         contextInfo,
         metricsInfo,
         cacheTimerInfo,
+        overheadInfo,
+        costWatchInfo,
+        harnessInfo,
       );
     }
 
@@ -207,6 +255,9 @@ export class PowerlineRenderer {
           contextInfo,
           metricsInfo,
           cacheTimerInfo,
+          overheadInfo,
+          costWatchInfo,
+          harnessInfo,
         ),
       ),
     );
@@ -222,6 +273,9 @@ export class PowerlineRenderer {
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
     cacheTimerInfo: CacheTimerInfo | null,
+    overheadInfo: OverheadInfo | null,
+    costWatchInfo: CostWatchInfo | null,
+    harnessInfo: HarnessInfo | null,
   ): Promise<string> {
     const colors = this.getThemeColors();
     const currentDir = hookData.workspace?.current_dir || hookData.cwd || "/";
@@ -251,6 +305,9 @@ export class PowerlineRenderer {
           contextInfo,
           metricsInfo,
           cacheTimerInfo,
+          overheadInfo,
+          costWatchInfo,
+          harnessInfo,
           colors,
           currentDir,
         );
@@ -450,6 +507,9 @@ export class PowerlineRenderer {
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
     cacheTimerInfo: CacheTimerInfo | null,
+    overheadInfo: OverheadInfo | null,
+    costWatchInfo: CostWatchInfo | null,
+    harnessInfo: HarnessInfo | null,
   ): Promise<string> {
     const colors = this.getThemeColors();
     const currentDir = hookData.workspace?.current_dir || hookData.cwd || "/";
@@ -472,6 +532,9 @@ export class PowerlineRenderer {
         contextInfo,
         metricsInfo,
         cacheTimerInfo,
+        overheadInfo,
+        costWatchInfo,
+        harnessInfo,
         colors,
         currentDir,
       );
@@ -499,6 +562,9 @@ export class PowerlineRenderer {
     contextInfo: ContextInfo | null,
     metricsInfo: MetricsInfo | null,
     cacheTimerInfo: CacheTimerInfo | null,
+    overheadInfo: OverheadInfo | null,
+    costWatchInfo: CostWatchInfo | null,
+    harnessInfo: HarnessInfo | null,
     colors: PowerlineColors,
     currentDir: string,
   ) {
@@ -622,6 +688,33 @@ export class PowerlineRenderer {
         cacheTimerInfo,
         colors,
         segment.config as CacheTimerSegmentConfig,
+      );
+    }
+
+    if (segment.type === "overhead") {
+      if (!overheadInfo) return null;
+      return this.segmentRenderer.renderOverhead(
+        overheadInfo,
+        colors,
+        segment.config as OverheadSegmentConfig,
+      );
+    }
+
+    if (segment.type === "costWatch") {
+      if (!costWatchInfo) return null;
+      return this.segmentRenderer.renderCostWatch(
+        costWatchInfo,
+        colors,
+        segment.config as CostWatchSegmentConfig,
+      );
+    }
+
+    if (segment.type === "harness") {
+      if (!harnessInfo) return null;
+      return this.segmentRenderer.renderHarness(
+        harnessInfo,
+        colors,
+        segment.config as HarnessSegmentConfig,
       );
     }
 
@@ -762,6 +855,9 @@ export class PowerlineRenderer {
       agent: symbolSet.agent,
       thinking: symbolSet.thinking,
       cache_timer: symbolSet.cache_timer,
+      overhead: symbolSet.overhead,
+      costWatch: symbolSet.costWatch,
+      harness: symbolSet.harness,
     };
   }
 
@@ -842,6 +938,11 @@ export class PowerlineRenderer {
     const agent = getSegmentColors("agent");
     const thinking = getSegmentColors("thinking");
     const cacheTimer = getSegmentColors("cacheTimer");
+    const overhead = getSegmentColors("overhead");
+    const costWatch = getSegmentColors("costWatch");
+    const costWatchWarning = getSegmentColors("costWatchWarning");
+    const costWatchCritical = getSegmentColors("costWatchCritical");
+    const harness = getSegmentColors("harness");
 
     return {
       reset: colorSupport === "none" ? "" : RESET_CODE,
@@ -896,6 +997,21 @@ export class PowerlineRenderer {
       cacheTimerBg: cacheTimer.bg,
       cacheTimerFg: cacheTimer.fg,
       cacheTimerBold: cacheTimer.bold,
+      overheadBg: overhead.bg,
+      overheadFg: overhead.fg,
+      overheadBold: overhead.bold,
+      costWatchBg: costWatch.bg,
+      costWatchFg: costWatch.fg,
+      costWatchBold: costWatch.bold,
+      costWatchWarningBg: costWatchWarning.bg,
+      costWatchWarningFg: costWatchWarning.fg,
+      costWatchWarningBold: costWatchWarning.bold,
+      costWatchCriticalBg: costWatchCritical.bg,
+      costWatchCriticalFg: costWatchCritical.fg,
+      costWatchCriticalBold: costWatchCritical.bold,
+      harnessBg: harness.bg,
+      harnessFg: harness.fg,
+      harnessBold: harness.bold,
       partFg: theme === "custom" ? this.resolvePartColors(convertHex) : {},
     };
   }
@@ -953,6 +1069,12 @@ export class PowerlineRenderer {
         return colors.thinkingBg;
       case "cacheTimer":
         return colors.cacheTimerBg;
+      case "overhead":
+        return colors.overheadBg;
+      case "costWatch":
+        return colors.costWatchBg;
+      case "harness":
+        return colors.harnessBg;
       default:
         return colors.modeBg;
     }
@@ -994,6 +1116,12 @@ export class PowerlineRenderer {
         return colors.thinkingBold;
       case "cacheTimer":
         return colors.cacheTimerBold;
+      case "overhead":
+        return colors.overheadBold;
+      case "costWatch":
+        return colors.costWatchBold;
+      case "harness":
+        return colors.harnessBold;
       default:
         return colors.modeBold;
     }

@@ -23,6 +23,9 @@ import type {
   AgentSegmentConfig,
   ThinkingSegmentConfig,
   CacheTimerSegmentConfig,
+  OverheadSegmentConfig,
+  CostWatchSegmentConfig,
+  HarnessSegmentConfig,
 } from "../segments/renderer";
 
 export interface LineConfig {
@@ -43,6 +46,9 @@ export interface LineConfig {
     agent?: AgentSegmentConfig;
     thinking?: ThinkingSegmentConfig;
     cacheTimer?: CacheTimerSegmentConfig;
+    overhead?: OverheadSegmentConfig;
+    costWatch?: CostWatchSegmentConfig;
+    harness?: HarnessSegmentConfig;
   };
 }
 

@@ -37,6 +37,11 @@ export interface ColorTheme {
   agent: SegmentColor;
   thinking: SegmentColor;
   cacheTimer: SegmentColor;
+  overhead: SegmentColor;
+  costWatch: SegmentColor;
+  costWatchWarning: SegmentColor;
+  costWatchCritical: SegmentColor;
+  harness: SegmentColor;
 }
 
 export interface PowerlineColors {
@@ -92,6 +97,21 @@ export interface PowerlineColors {
   cacheTimerBg: string;
   cacheTimerFg: string;
   cacheTimerBold: boolean;
+  overheadBg: string;
+  overheadFg: string;
+  overheadBold: boolean;
+  costWatchBg: string;
+  costWatchFg: string;
+  costWatchBold: boolean;
+  costWatchWarningBg: string;
+  costWatchWarningFg: string;
+  costWatchWarningBold: boolean;
+  costWatchCriticalBg: string;
+  costWatchCriticalFg: string;
+  costWatchCriticalBold: boolean;
+  harnessBg: string;
+  harnessFg: string;
+  harnessBold: boolean;
   partFg: Record<string, string>;
 }
 
