@@ -725,13 +725,36 @@ export class SegmentRenderer {
     colors: PowerlineColors,
     config?: WeeklySegmentConfig,
   ): SegmentData | null {
-    const sevenDay = hookData.rate_limits?.seven_day;
-    if (!sevenDay) return null;
+    let pct: number;
+    let timeRemaining: number;
 
-    const pct = Math.round(sevenDay.used_percentage);
-    const timeStr = formatLongTimeRemaining(
-      minutesUntilReset(sevenDay.resets_at),
-    );
+    const sevenDay = hookData.rate_limits?.seven_day;
+    if (sevenDay) {
+      pct = Math.round(sevenDay.used_percentage);
+      timeRemaining = minutesUntilReset(sevenDay.resets_at);
+    } else {
+      // Fallback: derive from context_window + session duration
+      const ctx = hookData.context_window;
+      if (!ctx || ctx.context_window_size <= 0) return null;
+
+      const totalTokens =
+        (ctx.total_input_tokens || 0) + (ctx.total_output_tokens || 0);
+      pct =
+        ctx.used_percentage ??
+        Math.min(100, Math.round((totalTokens / ctx.context_window_size) * 100));
+
+      const durationMs = hookData.cost?.total_duration_ms ?? 0;
+      const durationMin = durationMs / 60000;
+      if (durationMin > 0.5 && totalTokens > 0) {
+        const tokensPerMin = totalTokens / durationMin;
+        const remainingTokens = Math.max(0, ctx.context_window_size - totalTokens);
+        timeRemaining = Math.round(remainingTokens / tokensPerMin);
+      } else {
+        timeRemaining = Math.round((ctx.context_window_size - totalTokens) / 100);
+      }
+    }
+
+    const timeStr = formatLongTimeRemaining(timeRemaining);
 
     let bgColor = colors.weeklyBg;
     let fgColor = colors.weeklyFg;
