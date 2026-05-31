@@ -75,6 +75,7 @@ export type BarDisplayStyle =
 export interface ContextSegmentConfig extends SegmentConfig {
   showPercentageOnly?: boolean;
   displayStyle?: BarDisplayStyle;
+  barLength?: number;
   autocompactBuffer?: number;
   percentageMode?: "remaining" | "used";
 }
@@ -459,7 +460,7 @@ export class SegmentRenderer {
     colors: PowerlineColors,
     config?: ContextSegmentConfig,
   ): SegmentData | null {
-    const barLength = 10;
+    const barLength = config?.barLength ?? 10;
     const style = config?.displayStyle ?? "text";
     const defaultMode = style === "text" ? "remaining" : "used";
     const mode = config?.percentageMode ?? defaultMode;
