@@ -397,7 +397,19 @@ export class SegmentRenderer {
 
     if (formattedUsage === null) return null;
 
-    const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}`;
+    // Forecast: boot + live burn rate × estimated remaining turns
+    let forecastSuffix = "";
+    const { bootCost, burnRate, turnCount, cost } = usageInfo.session;
+    const budgetAmount = sessionBudget?.amount;
+    if (burnRate !== null && burnRate > 0 && budgetAmount && (cost ?? 0) > 0) {
+      const AVG_SESSION_TURNS = 20;
+      const remaining = Math.max(0, AVG_SESSION_TURNS - (turnCount ?? 0));
+      const forecastCost = (cost ?? 0) + burnRate * remaining;
+      const forecastPct = Math.min(999, Math.round((forecastCost / budgetAmount) * 100));
+      forecastSuffix = ` (→${forecastPct}%)`;
+    }
+
+    const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}${forecastSuffix}`;
 
     return {
       text,
@@ -742,8 +754,23 @@ export class SegmentRenderer {
       bold = colors.contextWarningBold;
     }
 
+    // Weekly forecast: project burn rate to end of week
+    let forecastSuffix = "";
+    const resetAt = sevenDay?.resets_at;
+    if (resetAt && pct > 0) {
+      const now = Date.now();
+      const resetMs = new Date(resetAt).getTime();
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const elapsedMs = Math.max(1, weekMs - (resetMs - now));
+      const elapsedDays = elapsedMs / (24 * 60 * 60 * 1000);
+      const dailyBurn = pct / elapsedDays;
+      const remainingDays = Math.max(0, (resetMs - now) / (24 * 60 * 60 * 1000));
+      const forecastPct = Math.min(100, Math.round(pct + dailyBurn * remainingDays));
+      if (forecastPct > pct) forecastSuffix = ` (→${forecastPct}%)`;
+    }
+
     return {
-      text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
+      text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}${forecastSuffix}`,
       bgColor,
       fgColor,
       bold,

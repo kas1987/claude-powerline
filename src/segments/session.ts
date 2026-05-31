@@ -40,6 +40,9 @@ export interface SessionInfo {
   officialCost: number | null;
   tokens: number | null;
   tokenBreakdown: TokenBreakdown | null;
+  bootCost: number | null;
+  burnRate: number | null;
+  turnCount: number | null;
 }
 
 export interface UsageInfo {
@@ -149,6 +152,9 @@ export class SessionProvider {
         officialCost: null,
         tokens: null,
         tokenBreakdown: null,
+        bootCost: null,
+        burnRate: null,
+        turnCount: null,
       };
     }
 
@@ -163,12 +169,33 @@ export class SessionProvider {
     const hookDataCost = hookData?.cost?.total_cost_usd ?? null;
     const cost = calculatedCost ?? hookDataCost;
 
+    // Boot cost: first entry that has significant cache creation (CLAUDE.md load)
+    const BOOT_CACHE_THRESHOLD = 5000;
+    let bootCost = 0;
+    let bootTurns = 0;
+    for (const entry of sessionUsage.entries) {
+      if ((entry.message.usage.cache_creation_input_tokens ?? 0) > BOOT_CACHE_THRESHOLD) {
+        bootCost += entry.costUSD ?? 0;
+        bootTurns++;
+      } else {
+        break;
+      }
+    }
+
+    // Live burn rate: average cost per turn after boot
+    const liveEntries = sessionUsage.entries.slice(bootTurns);
+    const liveCost = liveEntries.reduce((s, e) => s + (e.costUSD ?? 0), 0);
+    const burnRate = liveEntries.length > 0 ? liveCost / liveEntries.length : null;
+
     return {
       cost,
       calculatedCost,
       officialCost: hookDataCost,
       tokens: totalTokens,
       tokenBreakdown,
+      bootCost,
+      burnRate,
+      turnCount: sessionUsage.entries.length,
     };
   }
 }
