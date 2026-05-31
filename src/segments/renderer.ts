@@ -475,11 +475,15 @@ export class SegmentRenderer {
     let fgColor = colors.contextFg;
     let bold = colors.contextBold;
 
-    if (contextInfo.contextLeftPercentage <= 20) {
+    if (contextInfo.contextLeftPercentage <= 30) {
+      bgColor = colors.contextDangerBg;
+      fgColor = colors.contextDangerFg;
+      bold = colors.contextDangerBold;
+    } else if (contextInfo.contextLeftPercentage <= 50) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
       bold = colors.contextCriticalBold;
-    } else if (contextInfo.contextLeftPercentage <= 40) {
+    } else if (contextInfo.contextLeftPercentage <= 60) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
       bold = colors.contextWarningBold;

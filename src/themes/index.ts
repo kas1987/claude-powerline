@@ -30,6 +30,7 @@ export interface ColorTheme {
   context: SegmentColor;
   contextWarning: SegmentColor;
   contextCritical: SegmentColor;
+  contextDanger: SegmentColor;
   metrics: SegmentColor;
   version: SegmentColor;
   env: SegmentColor;
@@ -71,6 +72,9 @@ export interface PowerlineColors {
   contextCriticalBg: string;
   contextCriticalFg: string;
   contextCriticalBold: boolean;
+  contextDangerBg: string;
+  contextDangerFg: string;
+  contextDangerBold: boolean;
   metricsBg: string;
   metricsFg: string;
   metricsBold: boolean;

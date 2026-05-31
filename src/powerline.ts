@@ -835,6 +835,7 @@ export class PowerlineRenderer {
     const context = getSegmentColors("context");
     const contextWarning = getSegmentColors("contextWarning");
     const contextCritical = getSegmentColors("contextCritical");
+    const contextDanger = getSegmentColors("contextDanger");
     const metrics = getSegmentColors("metrics");
     const version = getSegmentColors("version");
     const env = getSegmentColors("env");
@@ -875,6 +876,9 @@ export class PowerlineRenderer {
       contextCriticalBg: contextCritical.bg,
       contextCriticalFg: contextCritical.fg,
       contextCriticalBold: contextCritical.bold,
+      contextDangerBg: contextDanger.bg,
+      contextDangerFg: contextDanger.fg,
+      contextDangerBold: contextDanger.bold,
       metricsBg: metrics.bg,
       metricsFg: metrics.fg,
       metricsBold: metrics.bold,
