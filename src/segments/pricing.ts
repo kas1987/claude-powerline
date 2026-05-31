@@ -84,14 +84,6 @@ const OFFLINE_PRICING_DATA: Record<string, ModelPricing> = {
     cache_write_1h: 6.0,
     cache_read: 0.3,
   },
-  "claude-sonnet-4-5-20250929": {
-    name: "Claude Sonnet 4.5",
-    input: 3.0,
-    output: 15.0,
-    cache_write_5m: 3.75,
-    cache_write_1h: 6.0,
-    cache_read: 0.3,
-  },
   "claude-opus-4-5": {
     name: "Claude Opus 4.5",
     input: 5.0,
@@ -131,6 +123,30 @@ const OFFLINE_PRICING_DATA: Record<string, ModelPricing> = {
     cache_write_5m: 3.75,
     cache_write_1h: 6.0,
     cache_read: 0.3,
+  },
+  "claude-opus-4-7": {
+    name: "Claude Opus 4.7",
+    input: 5.0,
+    output: 25.0,
+    cache_write_5m: 6.25,
+    cache_write_1h: 10.0,
+    cache_read: 0.5,
+  },
+  "claude-opus-4-7-20260416": {
+    name: "Claude Opus 4.7",
+    input: 5.0,
+    output: 25.0,
+    cache_write_5m: 6.25,
+    cache_write_1h: 10.0,
+    cache_read: 0.5,
+  },
+  "claude-opus-4-8": {
+    name: "Claude Opus 4.8",
+    input: 5.0,
+    output: 25.0,
+    cache_write_5m: 6.25,
+    cache_write_1h: 10.0,
+    cache_read: 0.5,
   },
 };
 
@@ -345,6 +361,14 @@ export class PricingService {
     }
     const patterns = [
       {
+        pattern: ["opus-4-8", "claude-opus-4-8"],
+        fallback: "claude-opus-4-8",
+      },
+      {
+        pattern: ["opus-4-7", "claude-opus-4-7"],
+        fallback: "claude-opus-4-7",
+      },
+      {
         pattern: ["opus-4-6", "claude-opus-4-6"],
         fallback: "claude-opus-4-6-20260205",
       },
@@ -366,7 +390,7 @@ export class PricingService {
       },
       {
         pattern: ["sonnet-4.5", "4-5-sonnet", "sonnet-4-5"],
-        fallback: "claude-sonnet-4-5-20250929",
+        fallback: "claude-sonnet-4-6",
       },
       {
         pattern: ["sonnet-4", "claude-sonnet-4"],
@@ -377,8 +401,8 @@ export class PricingService {
         fallback: "claude-haiku-4-5-20251001",
       },
       { pattern: ["haiku"], fallback: "claude-haiku-4-5-20251001" },
-      { pattern: ["opus"], fallback: "claude-opus-4-20250514" },
-      { pattern: ["sonnet"], fallback: "claude-sonnet-4-5-20250929" },
+      { pattern: ["opus"], fallback: "claude-opus-4-8" },
+      { pattern: ["sonnet"], fallback: "claude-sonnet-4-6" },
     ];
 
     for (const { pattern, fallback } of patterns) {
@@ -390,7 +414,7 @@ export class PricingService {
     }
 
     return (
-      allPricing["claude-sonnet-4-5-20250929"] || {
+      allPricing["claude-sonnet-4-6"] || {
         name: `${modelId} (Unknown Model)`,
         input: 3.0,
         cache_write_5m: 3.75,
@@ -441,7 +465,7 @@ export class PricingService {
       const modelObj = model as Record<string, unknown> | undefined;
       return (
         (typeof modelObj?.id === "string" ? modelObj.id : null) ||
-        "claude-sonnet-4-5-20250929"
+        "claude-sonnet-4-6"
       );
     }
 
@@ -449,6 +473,6 @@ export class PricingService {
       return entry.model_id;
     }
 
-    return "claude-sonnet-4-5-20250929";
+    return "claude-sonnet-4-6";
   }
 }
