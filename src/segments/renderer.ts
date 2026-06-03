@@ -121,6 +121,10 @@ export interface SessionIdSegmentConfig extends SegmentConfig {
 export interface EnvSegmentConfig extends SegmentConfig {
   variable: string;
   prefix?: string;
+  // When false, render the prefix immediately before the value with no
+  // "prefix: value" colon separator (e.g. "↗ 5h 8%" instead of "⚙ ↗ : 5h 8%").
+  // Combine with showIcon:false to drop the leading env icon entirely.
+  label?: boolean;
 }
 
 export interface WeeklySegmentConfig extends SegmentConfig {
@@ -946,9 +950,11 @@ export class SegmentRenderer {
     if (!value) return null;
     const prefix = config.prefix ?? config.variable;
     const iconPrefix = this.leadingIcon(this.symbols.env, config);
-    const text = prefix
-      ? `${iconPrefix}${prefix}: ${value}`
-      : `${iconPrefix}${value}`;
+    const text = !prefix
+      ? `${iconPrefix}${value}`
+      : config.label === false
+        ? `${iconPrefix}${prefix}${value}`
+        : `${iconPrefix}${prefix}: ${value}`;
     return { text, bgColor: colors.envBg, fgColor: colors.envFg };
   }
 
