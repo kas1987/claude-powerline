@@ -43,6 +43,8 @@ export interface DirectorySegmentConfig extends SegmentConfig {
 }
 
 export interface GitSegmentConfig extends SegmentConfig {
+  showBranch?: boolean;
+  showStatus?: boolean;
   showSha?: boolean;
   showAheadBehind?: boolean;
   showWorkingTree?: boolean;
@@ -78,10 +80,15 @@ export type BarDisplayStyle =
 
 export interface ContextSegmentConfig extends SegmentConfig {
   showPercentageOnly?: boolean;
+  barOnly?: boolean;
   displayStyle?: BarDisplayStyle;
   barLength?: number;
   autocompactBuffer?: number;
   percentageMode?: "remaining" | "used";
+  // Color thresholds on the raw model-relative USED percentage (tokens / model
+  // context window). Default: yellow >= 55%, red >= 70%.
+  warnThreshold?: number;
+  critThreshold?: number;
 }
 
 export interface MetricsSegmentConfig extends SegmentConfig {
@@ -315,11 +322,13 @@ export class SegmentRenderer {
       this.config.display?.showIcons,
       config?.showIcon,
     );
-    parts.push(
-      showBranchIcon
-        ? `${this.symbols.branch} ${gitInfo.branch}`
-        : gitInfo.branch,
-    );
+    if (config?.showBranch !== false) {
+      parts.push(
+        showBranchIcon
+          ? `${this.symbols.branch} ${gitInfo.branch}`
+          : gitInfo.branch,
+      );
+    }
 
     if (config?.showTag && gitInfo.tag) {
       parts.push(`${this.symbols.git_tag} ${gitInfo.tag}`);
@@ -373,13 +382,15 @@ export class SegmentRenderer {
       parts.push(`${this.symbols.git_time} ${time}`);
     }
 
-    let gitStatusIcon = this.symbols.git_clean;
-    if (gitInfo.status === "conflicts") {
-      gitStatusIcon = this.symbols.git_conflicts;
-    } else if (gitInfo.status === "dirty") {
-      gitStatusIcon = this.symbols.git_dirty;
+    if (config?.showStatus !== false) {
+      let gitStatusIcon = this.symbols.git_clean;
+      if (gitInfo.status === "conflicts") {
+        gitStatusIcon = this.symbols.git_conflicts;
+      } else if (gitInfo.status === "dirty") {
+        gitStatusIcon = this.symbols.git_dirty;
+      }
+      parts.push(gitStatusIcon);
     }
-    parts.push(gitStatusIcon);
 
     return {
       text: parts.join(" "),
@@ -519,15 +530,18 @@ export class SegmentRenderer {
     let fgColor = colors.contextFg;
     let bold = colors.contextBold;
 
-    if (contextInfo.contextLeftPercentage <= 30) {
-      bgColor = colors.contextDangerBg;
-      fgColor = colors.contextDangerFg;
-      bold = colors.contextDangerBold;
-    } else if (contextInfo.contextLeftPercentage <= 50) {
+    // Color on the raw model-relative USED percentage (tokens / model context
+    // window): yellow at/above warnThreshold (default 55), red at/above
+    // critThreshold (default 70). contextInfo.percentage is already the
+    // model-relative used %, overridden by Claude Code's native used_percentage.
+    const warnAt = config?.warnThreshold ?? 55;
+    const critAt = config?.critThreshold ?? 70;
+    const usedPct = contextInfo.percentage;
+    if (usedPct >= critAt) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
       bold = colors.contextCriticalBold;
-    } else if (contextInfo.contextLeftPercentage <= 60) {
+    } else if (usedPct >= warnAt) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
       bold = colors.contextWarningBold;
@@ -537,9 +551,9 @@ export class SegmentRenderer {
       mode === "remaining"
         ? contextInfo.contextLeftPercentage
         : contextInfo.usablePercentage;
-    const filledCount = Math.round(
-      (contextInfo.usablePercentage / 100) * barLength,
-    );
+    // Bar fill tracks the raw model-relative USED % so the fill and the color
+    // thresholds share one basis.
+    const filledCount = Math.round((contextInfo.percentage / 100) * barLength);
     const emptyCount = barLength - filledCount;
 
     if (barStyleDef) {
@@ -550,9 +564,11 @@ export class SegmentRenderer {
         barLength,
       );
 
-      const text = config?.showPercentageOnly
-        ? `${bar} ${pct}%`
-        : `${bar} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
+      const text = config?.barOnly
+        ? bar
+        : config?.showPercentageOnly
+          ? `${bar} ${pct}%`
+          : `${bar} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
 
       return { text, bgColor, fgColor, bold };
     }
