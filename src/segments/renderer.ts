@@ -67,6 +67,8 @@ export interface UsageSegmentConfig extends SegmentConfig {
   costSource?: "calculated" | "official";
   /** Show the trailing "tokens" unit on token counts. Only affects `type: "tokens"` and `type: "both"` (default: true). Inert in the `tui` display style, which never renders the suffix. */
   showUnits?: boolean;
+  /** Show budget percentage and forecast suffix (default: true). Set to false for raw value only. */
+  showBudget?: boolean;
 }
 
 export interface TmuxSegmentConfig extends SegmentConfig {}
@@ -459,7 +461,8 @@ export class SegmentRenderer {
   ): SegmentData | null {
     const type = config?.type || "cost";
     const costSource = config?.costSource;
-    const sessionBudget = this.config.budget?.session;
+    const showBudget = config?.showBudget ?? true;
+    const sessionBudget = showBudget ? this.config.budget?.session : undefined;
 
     const getCost = () => {
       if (costSource === "calculated") return usageInfo.session.calculatedCost;
@@ -480,14 +483,16 @@ export class SegmentRenderer {
 
     // Forecast: boot + live burn rate × estimated remaining turns
     let forecastSuffix = "";
-    const { bootCost, burnRate, turnCount, cost } = usageInfo.session;
-    const budgetAmount = sessionBudget?.amount;
-    if (burnRate !== null && burnRate > 0 && budgetAmount && (cost ?? 0) > 0) {
-      const AVG_SESSION_TURNS = 20;
-      const remaining = Math.max(0, AVG_SESSION_TURNS - (turnCount ?? 0));
-      const forecastCost = (cost ?? 0) + burnRate * remaining;
-      const forecastPct = Math.min(999, Math.round((forecastCost / budgetAmount) * 100));
-      forecastSuffix = ` (→${forecastPct}%)`;
+    if (showBudget) {
+      const { burnRate, turnCount, cost } = usageInfo.session;
+      const budgetAmount = sessionBudget?.amount;
+      if (burnRate !== null && burnRate > 0 && budgetAmount && (cost ?? 0) > 0) {
+        const AVG_SESSION_TURNS = 20;
+        const remaining = Math.max(0, AVG_SESSION_TURNS - (turnCount ?? 0));
+        const forecastCost = (cost ?? 0) + burnRate * remaining;
+        const forecastPct = Math.min(999, Math.round((forecastCost / budgetAmount) * 100));
+        forecastSuffix = ` (→${forecastPct}%)`;
+      }
     }
 
     const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}${forecastSuffix}`;
