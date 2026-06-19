@@ -403,6 +403,18 @@ export class SegmentRenderer {
     };
   }
 
+  private getModelColors(modelId: string | undefined): { bg: string; fg: string } {
+    if (!modelId) return { bg: "#4c1d95", fg: "#ffffff" }; // default purple
+
+    const model = modelId.toLowerCase();
+    if (model.includes("haiku")) return { bg: "#6b7280", fg: "#ffffff" }; // Grey
+    if (model.includes("sonnet")) return { bg: "#059669", fg: "#ffffff" }; // Green
+    if (model.includes("opus")) return { bg: "#d97706", fg: "#ffffff" }; // Yellow/Amber
+    if (model.includes("fable")) return { bg: "#dc2626", fg: "#ffffff" }; // Red
+
+    return { bg: "#4c1d95", fg: "#ffffff" }; // default purple
+  }
+
   renderModel(
     hookData: ClaudeHookData,
     colors: PowerlineColors,
@@ -410,11 +422,12 @@ export class SegmentRenderer {
   ): SegmentData {
     const rawName = hookData.model?.display_name || "Claude";
     const modelName = formatModelName(rawName);
+    const modelColors = this.getModelColors(hookData.model?.id);
 
     return {
       text: `${this.leadingIcon(this.symbols.model, config)}${modelName}`,
-      bgColor: colors.modelBg,
-      fgColor: colors.modelFg,
+      bgColor: modelColors.bg,
+      fgColor: modelColors.fg,
     };
   }
 
