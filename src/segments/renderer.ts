@@ -14,6 +14,12 @@ import type {
 import type { TodayInfo } from "./today";
 
 import {
+  hexToAnsi,
+  hexToBasicAnsi,
+  hexTo256Ansi,
+} from "../utils/colors";
+import { getColorSupport } from "../utils/color-support";
+import {
   formatModelName,
   abbreviateFishStyle,
   formatCost,
@@ -43,6 +49,8 @@ export interface DirectorySegmentConfig extends SegmentConfig {
 }
 
 export interface GitSegmentConfig extends SegmentConfig {
+  showBranch?: boolean;
+  showStatus?: boolean;
   showSha?: boolean;
   showAheadBehind?: boolean;
   showWorkingTree?: boolean;
@@ -78,9 +86,15 @@ export type BarDisplayStyle =
 
 export interface ContextSegmentConfig extends SegmentConfig {
   showPercentageOnly?: boolean;
+  barOnly?: boolean;
   displayStyle?: BarDisplayStyle;
+  barLength?: number;
   autocompactBuffer?: number;
   percentageMode?: "remaining" | "used";
+  // Color thresholds on the raw model-relative USED percentage (tokens / model
+  // context window). Default: yellow >= 55%, red >= 70%.
+  warnThreshold?: number;
+  critThreshold?: number;
 }
 
 export interface MetricsSegmentConfig extends SegmentConfig {
@@ -113,6 +127,10 @@ export interface SessionIdSegmentConfig extends SegmentConfig {
 export interface EnvSegmentConfig extends SegmentConfig {
   variable: string;
   prefix?: string;
+  // When false, render the prefix immediately before the value with no
+  // "prefix: value" colon separator (e.g. "↗ 5h 8%" instead of "⚙ ↗ : 5h 8%").
+  // Combine with showIcon:false to drop the leading env icon entirely.
+  label?: boolean;
 }
 
 export interface WeeklySegmentConfig extends SegmentConfig {
@@ -314,11 +332,13 @@ export class SegmentRenderer {
       this.config.display?.showIcons,
       config?.showIcon,
     );
-    parts.push(
-      showBranchIcon
-        ? `${this.symbols.branch} ${gitInfo.branch}`
-        : gitInfo.branch,
-    );
+    if (config?.showBranch !== false) {
+      parts.push(
+        showBranchIcon
+          ? `${this.symbols.branch} ${gitInfo.branch}`
+          : gitInfo.branch,
+      );
+    }
 
     if (config?.showTag && gitInfo.tag) {
       parts.push(`${this.symbols.git_tag} ${gitInfo.tag}`);
@@ -372,19 +392,48 @@ export class SegmentRenderer {
       parts.push(`${this.symbols.git_time} ${time}`);
     }
 
-    let gitStatusIcon = this.symbols.git_clean;
-    if (gitInfo.status === "conflicts") {
-      gitStatusIcon = this.symbols.git_conflicts;
-    } else if (gitInfo.status === "dirty") {
-      gitStatusIcon = this.symbols.git_dirty;
+    if (config?.showStatus !== false) {
+      let gitStatusIcon = this.symbols.git_clean;
+      if (gitInfo.status === "conflicts") {
+        gitStatusIcon = this.symbols.git_conflicts;
+      } else if (gitInfo.status === "dirty") {
+        gitStatusIcon = this.symbols.git_dirty;
+      }
+      parts.push(gitStatusIcon);
     }
-    parts.push(gitStatusIcon);
 
     return {
       text: parts.join(" "),
       bgColor: colors.gitBg,
       fgColor: colors.gitFg,
     };
+  }
+
+  private getModelColors(modelId: string | undefined): { bg: string; fg: string } {
+    const colorMode = this.config.display?.colorCompatibility || "auto";
+    const colorSupport = colorMode === "auto" ? getColorSupport() : colorMode;
+
+    const convertHex = (hex: string, isBg: boolean): string => {
+      if (colorSupport === "none") return "";
+      if (colorSupport === "ansi") return hexToBasicAnsi(hex, isBg);
+      if (colorSupport === "ansi256") return hexTo256Ansi(hex, isBg);
+      return hexToAnsi(hex, isBg);
+    };
+
+    const toAnsi = (bgHex: string, fgHex: string) => ({
+      bg: convertHex(bgHex, true),
+      fg: convertHex(fgHex, false),
+    });
+
+    if (!modelId) return toAnsi("#4c1d95", "#ffffff");
+
+    const model = modelId.toLowerCase();
+    if (model.includes("haiku"))  return toAnsi("#6b7280", "#ffffff"); // Grey
+    if (model.includes("sonnet")) return toAnsi("#059669", "#ffffff"); // Green
+    if (model.includes("opus"))   return toAnsi("#d97706", "#ffffff"); // Yellow/Amber
+    if (model.includes("fable"))  return toAnsi("#dc2626", "#ffffff"); // Red
+
+    return toAnsi("#4c1d95", "#ffffff");
   }
 
   renderModel(
@@ -394,11 +443,12 @@ export class SegmentRenderer {
   ): SegmentData {
     const rawName = hookData.model?.display_name || "Claude";
     const modelName = formatModelName(rawName);
+    const modelColors = this.getModelColors(hookData.model?.id);
 
     return {
       text: `${this.leadingIcon(this.symbols.model, config)}${modelName}`,
-      bgColor: colors.modelBg,
-      fgColor: colors.modelFg,
+      bgColor: modelColors.bg,
+      fgColor: modelColors.fg,
     };
   }
 
@@ -428,7 +478,19 @@ export class SegmentRenderer {
 
     if (formattedUsage === null) return null;
 
-    const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}`;
+    // Forecast: boot + live burn rate × estimated remaining turns
+    let forecastSuffix = "";
+    const { bootCost, burnRate, turnCount, cost } = usageInfo.session;
+    const budgetAmount = sessionBudget?.amount;
+    if (burnRate !== null && burnRate > 0 && budgetAmount && (cost ?? 0) > 0) {
+      const AVG_SESSION_TURNS = 20;
+      const remaining = Math.max(0, AVG_SESSION_TURNS - (turnCount ?? 0));
+      const forecastCost = (cost ?? 0) + burnRate * remaining;
+      const forecastPct = Math.min(999, Math.round((forecastCost / budgetAmount) * 100));
+      forecastSuffix = ` (→${forecastPct}%)`;
+    }
+
+    const text = `${this.leadingIcon(this.symbols.session_cost, config)}${formattedUsage}${forecastSuffix}`;
 
     return {
       text,
@@ -478,7 +540,7 @@ export class SegmentRenderer {
     colors: PowerlineColors,
     config?: ContextSegmentConfig,
   ): SegmentData | null {
-    const barLength = 10;
+    const barLength = config?.barLength ?? 10;
     const style = config?.displayStyle ?? "text";
     const defaultMode = style === "text" ? "remaining" : "used";
     const mode = config?.percentageMode ?? defaultMode;
@@ -506,11 +568,18 @@ export class SegmentRenderer {
     let fgColor = colors.contextFg;
     let bold = colors.contextBold;
 
-    if (contextInfo.contextLeftPercentage <= 20) {
+    // Color on the raw model-relative USED percentage (tokens / model context
+    // window): yellow at/above warnThreshold (default 55), red at/above
+    // critThreshold (default 70). contextInfo.percentage is already the
+    // model-relative used %, overridden by Claude Code's native used_percentage.
+    const warnAt = config?.warnThreshold ?? 55;
+    const critAt = config?.critThreshold ?? 70;
+    const usedPct = contextInfo.percentage;
+    if (usedPct >= critAt) {
       bgColor = colors.contextCriticalBg;
       fgColor = colors.contextCriticalFg;
       bold = colors.contextCriticalBold;
-    } else if (contextInfo.contextLeftPercentage <= 40) {
+    } else if (usedPct >= warnAt) {
       bgColor = colors.contextWarningBg;
       fgColor = colors.contextWarningFg;
       bold = colors.contextWarningBold;
@@ -520,9 +589,9 @@ export class SegmentRenderer {
       mode === "remaining"
         ? contextInfo.contextLeftPercentage
         : contextInfo.usablePercentage;
-    const filledCount = Math.round(
-      (contextInfo.usablePercentage / 100) * barLength,
-    );
+    // Bar fill tracks the raw model-relative USED % so the fill and the color
+    // thresholds share one basis.
+    const filledCount = Math.round((contextInfo.percentage / 100) * barLength);
     const emptyCount = barLength - filledCount;
 
     if (barStyleDef) {
@@ -533,9 +602,11 @@ export class SegmentRenderer {
         barLength,
       );
 
-      const text = config?.showPercentageOnly
-        ? `${bar} ${pct}%`
-        : `${bar} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
+      const text = config?.barOnly
+        ? bar
+        : config?.showPercentageOnly
+          ? `${bar} ${pct}%`
+          : `${bar} ${contextInfo.totalTokens.toLocaleString()} (${pct}%)`;
 
       return { text, bgColor, fgColor, bold };
     }
@@ -725,13 +796,36 @@ export class SegmentRenderer {
     colors: PowerlineColors,
     config?: WeeklySegmentConfig,
   ): SegmentData | null {
-    const sevenDay = hookData.rate_limits?.seven_day;
-    if (!sevenDay) return null;
+    let pct: number;
+    let timeRemaining: number;
 
-    const pct = Math.round(sevenDay.used_percentage);
-    const timeStr = formatLongTimeRemaining(
-      minutesUntilReset(sevenDay.resets_at),
-    );
+    const sevenDay = hookData.rate_limits?.seven_day;
+    if (sevenDay) {
+      pct = Math.round(sevenDay.used_percentage);
+      timeRemaining = minutesUntilReset(sevenDay.resets_at);
+    } else {
+      // Fallback: derive from context_window + session duration
+      const ctx = hookData.context_window;
+      if (!ctx || ctx.context_window_size <= 0) return null;
+
+      const totalTokens =
+        (ctx.total_input_tokens || 0) + (ctx.total_output_tokens || 0);
+      pct =
+        ctx.used_percentage ??
+        Math.min(100, Math.round((totalTokens / ctx.context_window_size) * 100));
+
+      const durationMs = hookData.cost?.total_duration_ms ?? 0;
+      const durationMin = durationMs / 60000;
+      if (durationMin > 0.5 && totalTokens > 0) {
+        const tokensPerMin = totalTokens / durationMin;
+        const remainingTokens = Math.max(0, ctx.context_window_size - totalTokens);
+        timeRemaining = Math.round(remainingTokens / tokensPerMin);
+      } else {
+        timeRemaining = Math.round((ctx.context_window_size - totalTokens) / 100);
+      }
+    }
+
+    const timeStr = formatLongTimeRemaining(timeRemaining);
 
     let bgColor = colors.weeklyBg;
     let fgColor = colors.weeklyFg;
@@ -746,8 +840,23 @@ export class SegmentRenderer {
       bold = colors.contextWarningBold;
     }
 
+    // Weekly forecast: project burn rate to end of week
+    let forecastSuffix = "";
+    const resetAt = sevenDay?.resets_at;
+    if (resetAt && pct > 0) {
+      const now = Date.now();
+      const resetMs = new Date(resetAt).getTime();
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const elapsedMs = Math.max(1, weekMs - (resetMs - now));
+      const elapsedDays = elapsedMs / (24 * 60 * 60 * 1000);
+      const dailyBurn = pct / elapsedDays;
+      const remainingDays = Math.max(0, (resetMs - now) / (24 * 60 * 60 * 1000));
+      const forecastPct = Math.min(100, Math.round(pct + dailyBurn * remainingDays));
+      if (forecastPct > pct) forecastSuffix = ` (→${forecastPct}%)`;
+    }
+
     return {
-      text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}`,
+      text: `${this.leadingIcon(this.symbols.weekly_cost, config)}${this.formatPercentageWithBar(pct, config?.displayStyle, timeStr)}${forecastSuffix}`,
       bgColor,
       fgColor,
       bold,
@@ -875,9 +984,11 @@ export class SegmentRenderer {
     if (!value) return null;
     const prefix = config.prefix ?? config.variable;
     const iconPrefix = this.leadingIcon(this.symbols.env, config);
-    const text = prefix
-      ? `${iconPrefix}${prefix}: ${value}`
-      : `${iconPrefix}${value}`;
+    const text = !prefix
+      ? `${iconPrefix}${value}`
+      : config.label === false
+        ? `${iconPrefix}${prefix}${value}`
+        : `${iconPrefix}${prefix}: ${value}`;
     return { text, bgColor: colors.envBg, fgColor: colors.envFg };
   }
 
