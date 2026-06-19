@@ -14,6 +14,12 @@ import type {
 import type { TodayInfo } from "./today";
 
 import {
+  hexToAnsi,
+  hexToBasicAnsi,
+  hexTo256Ansi,
+} from "../utils/colors";
+import { getColorSupport } from "../utils/color-support";
+import {
   formatModelName,
   abbreviateFishStyle,
   formatCost,
@@ -404,15 +410,30 @@ export class SegmentRenderer {
   }
 
   private getModelColors(modelId: string | undefined): { bg: string; fg: string } {
-    if (!modelId) return { bg: "#4c1d95", fg: "#ffffff" }; // default purple
+    const colorMode = this.config.display?.colorCompatibility || "auto";
+    const colorSupport = colorMode === "auto" ? getColorSupport() : colorMode;
+
+    const convertHex = (hex: string, isBg: boolean): string => {
+      if (colorSupport === "none") return "";
+      if (colorSupport === "ansi") return hexToBasicAnsi(hex, isBg);
+      if (colorSupport === "ansi256") return hexTo256Ansi(hex, isBg);
+      return hexToAnsi(hex, isBg);
+    };
+
+    const toAnsi = (bgHex: string, fgHex: string) => ({
+      bg: convertHex(bgHex, true),
+      fg: convertHex(fgHex, false),
+    });
+
+    if (!modelId) return toAnsi("#4c1d95", "#ffffff");
 
     const model = modelId.toLowerCase();
-    if (model.includes("haiku")) return { bg: "#6b7280", fg: "#ffffff" }; // Grey
-    if (model.includes("sonnet")) return { bg: "#059669", fg: "#ffffff" }; // Green
-    if (model.includes("opus")) return { bg: "#d97706", fg: "#ffffff" }; // Yellow/Amber
-    if (model.includes("fable")) return { bg: "#dc2626", fg: "#ffffff" }; // Red
+    if (model.includes("haiku"))  return toAnsi("#6b7280", "#ffffff"); // Grey
+    if (model.includes("sonnet")) return toAnsi("#059669", "#ffffff"); // Green
+    if (model.includes("opus"))   return toAnsi("#d97706", "#ffffff"); // Yellow/Amber
+    if (model.includes("fable"))  return toAnsi("#dc2626", "#ffffff"); // Red
 
-    return { bg: "#4c1d95", fg: "#ffffff" }; // default purple
+    return toAnsi("#4c1d95", "#ffffff");
   }
 
   renderModel(
