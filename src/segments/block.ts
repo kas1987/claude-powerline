@@ -29,12 +29,14 @@ export class BlockProvider {
     const ctx = hookData?.context_window;
     if (ctx && ctx.context_window_size > 0) {
       const totalTokens =
-        (ctx.total_input_tokens || 0) +
-        (ctx.total_output_tokens || 0);
+        (ctx.total_input_tokens || 0) + (ctx.total_output_tokens || 0);
 
       const usedPct =
         ctx.used_percentage ??
-        Math.min(100, Math.round((totalTokens / ctx.context_window_size) * 100));
+        Math.min(
+          100,
+          Math.round((totalTokens / ctx.context_window_size) * 100),
+        );
 
       // Estimate time-to-limit from session burn rate.
       // Burn rate = tokens consumed / session duration.
@@ -44,11 +46,16 @@ export class BlockProvider {
       let timeRemaining = 0;
       if (durationMin > 0.5 && totalTokens > 0) {
         const tokensPerMin = totalTokens / durationMin;
-        const remainingTokens = Math.max(0, ctx.context_window_size - totalTokens);
+        const remainingTokens = Math.max(
+          0,
+          ctx.context_window_size - totalTokens,
+        );
         timeRemaining = Math.round(remainingTokens / tokensPerMin);
       } else {
         // Not enough history; show remaining capacity as a large number
-        timeRemaining = Math.round((ctx.context_window_size - totalTokens) / 100);
+        timeRemaining = Math.round(
+          (ctx.context_window_size - totalTokens) / 100,
+        );
       }
 
       debug(
