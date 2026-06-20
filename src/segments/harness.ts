@@ -11,9 +11,16 @@ export interface HarnessInfo {
 }
 
 export class HarnessProvider {
-  async getHarnessInfo(_hookData?: ClaudeHookData): Promise<HarnessInfo | null> {
+  async getHarnessInfo(
+    _hookData?: ClaudeHookData,
+  ): Promise<HarnessInfo | null> {
     try {
-      const statePath = path.join(os.homedir(), ".claude", "state", "harness-route.json");
+      const statePath = path.join(
+        os.homedir(),
+        ".claude",
+        "state",
+        "harness-route.json",
+      );
 
       let data: Record<string, unknown> = {};
       try {
@@ -27,7 +34,8 @@ export class HarnessProvider {
       const tier = typeof data.tier === "string" ? data.tier : "";
       if (!tier) return null;
 
-      const promptHash = typeof data.prompt_hash === "string" ? data.prompt_hash : "";
+      const promptHash =
+        typeof data.prompt_hash === "string" ? data.prompt_hash : "";
       const callType = typeof data.call_type === "string" ? data.call_type : "";
 
       return { tier, promptHash, callType };

@@ -23,7 +23,7 @@ export const gruvboxTheme: ColorTheme = {
   costWatch: { bg: "#3c3836", fg: "#b8bb26" },
   costWatchWarning: { bg: "#d79921", fg: "#282828" },
   costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
-  harness: { bg: "#504945", fg: "#d3869b" }
+  harness: { bg: "#504945", fg: "#d3869b" },
 };
 
 export const gruvboxAnsi256Theme: ColorTheme = {
@@ -49,7 +49,7 @@ export const gruvboxAnsi256Theme: ColorTheme = {
   costWatch: { bg: "#3c3836", fg: "#b8bb26" },
   costWatchWarning: { bg: "#d79921", fg: "#282828" },
   costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
-  harness: { bg: "#504945", fg: "#d3869b" }
+  harness: { bg: "#504945", fg: "#d3869b" },
 };
 
 export const gruvboxAnsiTheme: ColorTheme = {
@@ -75,5 +75,5 @@ export const gruvboxAnsiTheme: ColorTheme = {
   costWatch: { bg: "#3c3836", fg: "#b8bb26" },
   costWatchWarning: { bg: "#d79921", fg: "#282828" },
   costWatchCritical: { bg: "#cc241d", fg: "#ebdbb2" },
-  harness: { bg: "#504945", fg: "#d3869b" }
+  harness: { bg: "#504945", fg: "#d3869b" },
 };

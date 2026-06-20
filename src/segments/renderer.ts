@@ -12,12 +12,11 @@ import type {
   MetricsInfo,
 } from ".";
 import type { TodayInfo } from "./today";
+import type { OverheadInfo } from "./overhead";
+import type { CostWatchInfo } from "./costWatch";
+import type { HarnessInfo } from "./harness";
 
-import {
-  hexToAnsi,
-  hexToBasicAnsi,
-  hexTo256Ansi,
-} from "../utils/colors";
+import { hexToAnsi, hexToBasicAnsi, hexTo256Ansi } from "../utils/colors";
 import { getColorSupport } from "../utils/color-support";
 import {
   formatModelName,
@@ -411,7 +410,10 @@ export class SegmentRenderer {
     };
   }
 
-  private getModelColors(modelId: string | undefined): { bg: string; fg: string } {
+  private getModelColors(modelId: string | undefined): {
+    bg: string;
+    fg: string;
+  } {
     const colorMode = this.config.display?.colorCompatibility || "auto";
     const colorSupport = colorMode === "auto" ? getColorSupport() : colorMode;
 
@@ -430,10 +432,10 @@ export class SegmentRenderer {
     if (!modelId) return toAnsi("#4c1d95", "#ffffff");
 
     const model = modelId.toLowerCase();
-    if (model.includes("haiku"))  return toAnsi("#6b7280", "#ffffff"); // Grey
+    if (model.includes("haiku")) return toAnsi("#6b7280", "#ffffff"); // Grey
     if (model.includes("sonnet")) return toAnsi("#059669", "#ffffff"); // Green
-    if (model.includes("opus"))   return toAnsi("#d97706", "#ffffff"); // Yellow/Amber
-    if (model.includes("fable"))  return toAnsi("#dc2626", "#ffffff"); // Red
+    if (model.includes("opus")) return toAnsi("#d97706", "#ffffff"); // Yellow/Amber
+    if (model.includes("fable")) return toAnsi("#dc2626", "#ffffff"); // Red
 
     return toAnsi("#4c1d95", "#ffffff");
   }
@@ -486,11 +488,19 @@ export class SegmentRenderer {
     if (showBudget) {
       const { burnRate, turnCount, cost } = usageInfo.session;
       const budgetAmount = sessionBudget?.amount;
-      if (burnRate !== null && burnRate > 0 && budgetAmount && (cost ?? 0) > 0) {
+      if (
+        burnRate !== null &&
+        burnRate > 0 &&
+        budgetAmount &&
+        (cost ?? 0) > 0
+      ) {
         const AVG_SESSION_TURNS = 20;
         const remaining = Math.max(0, AVG_SESSION_TURNS - (turnCount ?? 0));
         const forecastCost = (cost ?? 0) + burnRate * remaining;
-        const forecastPct = Math.min(999, Math.round((forecastCost / budgetAmount) * 100));
+        const forecastPct = Math.min(
+          999,
+          Math.round((forecastCost / budgetAmount) * 100),
+        );
         forecastSuffix = ` (→${forecastPct}%)`;
       }
     }
@@ -817,16 +827,24 @@ export class SegmentRenderer {
         (ctx.total_input_tokens || 0) + (ctx.total_output_tokens || 0);
       pct =
         ctx.used_percentage ??
-        Math.min(100, Math.round((totalTokens / ctx.context_window_size) * 100));
+        Math.min(
+          100,
+          Math.round((totalTokens / ctx.context_window_size) * 100),
+        );
 
       const durationMs = hookData.cost?.total_duration_ms ?? 0;
       const durationMin = durationMs / 60000;
       if (durationMin > 0.5 && totalTokens > 0) {
         const tokensPerMin = totalTokens / durationMin;
-        const remainingTokens = Math.max(0, ctx.context_window_size - totalTokens);
+        const remainingTokens = Math.max(
+          0,
+          ctx.context_window_size - totalTokens,
+        );
         timeRemaining = Math.round(remainingTokens / tokensPerMin);
       } else {
-        timeRemaining = Math.round((ctx.context_window_size - totalTokens) / 100);
+        timeRemaining = Math.round(
+          (ctx.context_window_size - totalTokens) / 100,
+        );
       }
     }
 
@@ -855,8 +873,14 @@ export class SegmentRenderer {
       const elapsedMs = Math.max(1, weekMs - (resetMs - now));
       const elapsedDays = elapsedMs / (24 * 60 * 60 * 1000);
       const dailyBurn = pct / elapsedDays;
-      const remainingDays = Math.max(0, (resetMs - now) / (24 * 60 * 60 * 1000));
-      const forecastPct = Math.min(100, Math.round(pct + dailyBurn * remainingDays));
+      const remainingDays = Math.max(
+        0,
+        (resetMs - now) / (24 * 60 * 60 * 1000),
+      );
+      const forecastPct = Math.min(
+        100,
+        Math.round(pct + dailyBurn * remainingDays),
+      );
       if (forecastPct > pct) forecastSuffix = ` (→${forecastPct}%)`;
     }
 
@@ -1085,15 +1109,16 @@ export class SegmentRenderer {
   }
 
   renderOverhead(
-    info: import("./overhead").OverheadInfo | null,
+    info: OverheadInfo | null,
     colors: PowerlineColors,
     config?: OverheadSegmentConfig,
   ): SegmentData | null {
     if (!info) return null;
 
-    const totalStr = info.totalTokens >= 1000
-      ? `${(info.totalTokens / 1000).toFixed(1)}k`
-      : `${info.totalTokens}`;
+    const totalStr =
+      info.totalTokens >= 1000
+        ? `${(info.totalTokens / 1000).toFixed(1)}k`
+        : `${info.totalTokens}`;
 
     let levelColor = colors.overheadFg;
     let levelBg = colors.overheadBg;
@@ -1118,16 +1143,18 @@ export class SegmentRenderer {
     }
 
     if (config?.showExtended && info.gapTokens > 0) {
-      const gapStr = info.gapTokens >= 1000
-        ? `${(info.gapTokens / 1000).toFixed(1)}k`
-        : `${info.gapTokens}`;
+      const gapStr =
+        info.gapTokens >= 1000
+          ? `${(info.gapTokens / 1000).toFixed(1)}k`
+          : `${info.gapTokens}`;
       parts.push(`Δ${gapStr}`);
     }
 
     if (config?.showDynamicLoad && info.dynamicLoad > 0) {
-      const dynStr = info.dynamicLoad >= 1000
-        ? `${(info.dynamicLoad / 1000).toFixed(1)}k`
-        : `${info.dynamicLoad}`;
+      const dynStr =
+        info.dynamicLoad >= 1000
+          ? `${(info.dynamicLoad / 1000).toFixed(1)}k`
+          : `${info.dynamicLoad}`;
       parts.push(`+${dynStr}`);
     }
 
@@ -1140,7 +1167,7 @@ export class SegmentRenderer {
   }
 
   renderCostWatch(
-    info: import("./costWatch").CostWatchInfo | null,
+    info: CostWatchInfo | null,
     colors: PowerlineColors,
     config?: CostWatchSegmentConfig,
   ): SegmentData | null {
@@ -1180,7 +1207,7 @@ export class SegmentRenderer {
   }
 
   renderHarness(
-    info: import("./harness").HarnessInfo | null,
+    info: HarnessInfo | null,
     colors: PowerlineColors,
     config?: HarnessSegmentConfig,
   ): SegmentData | null {
