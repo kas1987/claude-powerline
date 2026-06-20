@@ -23,7 +23,7 @@ export const tokyoNightTheme: ColorTheme = {
   costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
   costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
   costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
-  harness: { bg: "#2d2b55", fg: "#bb9af7" }
+  harness: { bg: "#2d2b55", fg: "#bb9af7" },
 };
 
 export const tokyoNightAnsi256Theme: ColorTheme = {
@@ -49,7 +49,7 @@ export const tokyoNightAnsi256Theme: ColorTheme = {
   costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
   costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
   costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
-  harness: { bg: "#2d2b55", fg: "#bb9af7" }
+  harness: { bg: "#2d2b55", fg: "#bb9af7" },
 };
 
 export const tokyoNightAnsiTheme: ColorTheme = {
@@ -75,5 +75,5 @@ export const tokyoNightAnsiTheme: ColorTheme = {
   costWatch: { bg: "#1f2e2a", fg: "#9ece6a" },
   costWatchWarning: { bg: "#ff9e64", fg: "#1a1b26" },
   costWatchCritical: { bg: "#f7768e", fg: "#1a1b26" },
-  harness: { bg: "#2d2b55", fg: "#bb9af7" }
+  harness: { bg: "#2d2b55", fg: "#bb9af7" },
 };

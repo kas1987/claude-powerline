@@ -16,9 +16,16 @@ export interface CostWatchInfo {
 }
 
 export class CostWatchProvider {
-  async getCostWatchInfo(_hookData?: ClaudeHookData): Promise<CostWatchInfo | null> {
+  async getCostWatchInfo(
+    _hookData?: ClaudeHookData,
+  ): Promise<CostWatchInfo | null> {
     try {
-      const statePath = path.join(os.homedir(), ".claude", "state", "ccc-cost.json");
+      const statePath = path.join(
+        os.homedir(),
+        ".claude",
+        "state",
+        "ccc-cost.json",
+      );
 
       let data: Record<string, unknown> = {};
       try {
@@ -30,9 +37,10 @@ export class CostWatchProvider {
       }
 
       const levelRaw = data.level;
-      const level = levelRaw === "ok" || levelRaw === "warn" || levelRaw === "alert"
-        ? levelRaw
-        : "ok";
+      const level =
+        levelRaw === "ok" || levelRaw === "warn" || levelRaw === "alert"
+          ? levelRaw
+          : "ok";
 
       const alerts = Array.isArray(data.alerts)
         ? data.alerts.filter((a): a is string => typeof a === "string")
@@ -42,8 +50,10 @@ export class CostWatchProvider {
         costTotal: typeof data.cost_total === "number" ? data.cost_total : 0,
         sessions: typeof data.sessions === "number" ? data.sessions : 0,
         asstTurns: typeof data.asst_turns === "number" ? data.asst_turns : 0,
-        opusTurnShare: typeof data.opus_turn_share === "number" ? data.opus_turn_share : 0,
-        opusCostShare: typeof data.opus_cost_share === "number" ? data.opus_cost_share : 0,
+        opusTurnShare:
+          typeof data.opus_turn_share === "number" ? data.opus_turn_share : 0,
+        opusCostShare:
+          typeof data.opus_cost_share === "number" ? data.opus_cost_share : 0,
         haikuShare: typeof data.haiku_share === "number" ? data.haiku_share : 0,
         alerts,
         level,

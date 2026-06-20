@@ -23,7 +23,7 @@ export const lightTheme: ColorTheme = {
   costWatch: { bg: "#059669", fg: "#ffffff" },
   costWatchWarning: { bg: "#d97706", fg: "#ffffff" },
   costWatchCritical: { bg: "#dc2626", fg: "#ffffff" },
-  harness: { bg: "#7c3aed", fg: "#ffffff" }
+  harness: { bg: "#7c3aed", fg: "#ffffff" },
 };
 
 export const lightAnsi256Theme: ColorTheme = {
@@ -49,7 +49,7 @@ export const lightAnsi256Theme: ColorTheme = {
   costWatch: { bg: "#059669", fg: "#ffffff" },
   costWatchWarning: { bg: "#d97706", fg: "#ffffff" },
   costWatchCritical: { bg: "#dc2626", fg: "#ffffff" },
-  harness: { bg: "#7c3aed", fg: "#ffffff" }
+  harness: { bg: "#7c3aed", fg: "#ffffff" },
 };
 
 export const lightAnsiTheme: ColorTheme = {
@@ -75,5 +75,5 @@ export const lightAnsiTheme: ColorTheme = {
   costWatch: { bg: "#059669", fg: "#ffffff" },
   costWatchWarning: { bg: "#d97706", fg: "#ffffff" },
   costWatchCritical: { bg: "#dc2626", fg: "#ffffff" },
-  harness: { bg: "#7c3aed", fg: "#ffffff" }
+  harness: { bg: "#7c3aed", fg: "#ffffff" },
 };
