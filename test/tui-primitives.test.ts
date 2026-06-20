@@ -196,16 +196,12 @@ describe("spreadEven", () => {
 
   it("spreads two parts with gap between them", () => {
     const result = spreadEven(["A", "B"], 10);
-    expect(result).toContain("A");
-    expect(result).toContain("B");
-    expect(result.indexOf("A")).toBeLessThan(result.indexOf("B"));
-    expect(result.indexOf("B") - result.indexOf("A")).toBeGreaterThanOrEqual(2);
+    expect(result).toBe("A        B");
   });
 
   it("spreads three parts with gaps between them", () => {
     const result = spreadEven(["A", "B", "C"], 20);
-    expect(result.indexOf("A")).toBeLessThan(result.indexOf("B"));
-    expect(result.indexOf("B")).toBeLessThan(result.indexOf("C"));
+    expect(result).toBe("A        B        C");
   });
 });
 

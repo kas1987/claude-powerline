@@ -118,10 +118,10 @@ describe("GitService", () => {
       expect(result!.status).toBe("conflicts");
     });
 
-    it("tracks staged and unstaged counts with showWorkingTree", async () => {
+    it("tracks staged, unstaged, untracked, and conflict counts with showWorkingTree", async () => {
       mockExec.mockImplementation(
         makeExec({
-          "git status --porcelain -b": "## main\nM  staged.ts\n M unstaged.ts\n?? untracked.ts\n",
+          "git status --porcelain -b": "## main\nM  staged.ts\n M unstaged.ts\n?? untracked.ts\nUU conflict.ts\n",
           "git rev-list --count @{u}..HEAD": "0\n",
           "git rev-list --count HEAD..@{u}": "0\n",
         }),
@@ -131,6 +131,7 @@ describe("GitService", () => {
       expect(result!.staged).toBe(1);
       expect(result!.unstaged).toBe(1);
       expect(result!.untracked).toBe(1);
+      expect(result!.conflicts).toBe(1);
     });
 
     it("reports ahead/behind counts correctly", async () => {

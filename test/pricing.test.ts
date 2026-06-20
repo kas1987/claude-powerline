@@ -20,12 +20,14 @@ function resetPricingCache() {
   (PricingService as any).modelPricingCache = new Map();
 }
 
-// Default HTTP mock: immediately fires an error so pricing falls back to offline data
+// Default HTTP mock: fires an error asynchronously so pricing falls back to offline data
 function mockNetworkError() {
   mockHttpGet.mockImplementation((_opts: any, _cb: any) => {
     const req = {
       on: jest.fn((event: string, handler: any) => {
-        if (event === "error") (handler as (e: Error) => void)(new Error("Network unavailable"));
+        if (event === "error") {
+          setImmediate(() => (handler as (e: Error) => void)(new Error("Network unavailable")));
+        }
       }),
       end: jest.fn(),
       destroy: jest.fn(),
@@ -36,7 +38,7 @@ function mockNetworkError() {
 
 describe("PricingService", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     resetPricingCache();
     CacheManager.getUsageCache.mockResolvedValue(null);
     CacheManager.setUsageCache.mockResolvedValue(undefined);
