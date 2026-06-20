@@ -231,6 +231,9 @@ export class UsageProvider {
           officialCost: null,
           tokens: null,
           tokenBreakdown: null,
+          bootCost: null,
+          burnRate: null,
+          turnCount: null,
         },
       };
     }

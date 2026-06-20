@@ -895,7 +895,7 @@ describe("Segment Time Logic", () => {
     });
 
     it("should apply warning/critical colors based on context left percentage", () => {
-      const warning = renderer.renderContext(mkContext(70), colors, {
+      const warning = renderer.renderContext(mkContext(60), colors, {
         enabled: true,
         displayStyle: "blocks",
       });

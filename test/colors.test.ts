@@ -107,6 +107,7 @@ describe("Colors", () => {
 
       process.env = {};
       process.env.FORCE_COLOR = "";
+      process.env.COLORTERM = "truecolor";
       expect(getColorSupport()).not.toBe("ansi");
     });
 
