@@ -23,7 +23,7 @@ export const nordTheme: ColorTheme = {
   costWatch: { bg: "#3b4252", fg: "#a3be8c" },
   costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
   costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
-  harness: { bg: "#4c566a", fg: "#b48ead" }
+  harness: { bg: "#4c566a", fg: "#b48ead" },
 };
 
 export const nordAnsi256Theme: ColorTheme = {
@@ -49,7 +49,7 @@ export const nordAnsi256Theme: ColorTheme = {
   costWatch: { bg: "#3b4252", fg: "#a3be8c" },
   costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
   costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
-  harness: { bg: "#4c566a", fg: "#b48ead" }
+  harness: { bg: "#4c566a", fg: "#b48ead" },
 };
 
 export const nordAnsiTheme: ColorTheme = {
@@ -75,5 +75,5 @@ export const nordAnsiTheme: ColorTheme = {
   costWatch: { bg: "#3b4252", fg: "#a3be8c" },
   costWatchWarning: { bg: "#d08770", fg: "#2e3440" },
   costWatchCritical: { bg: "#bf616a", fg: "#eceff4" },
-  harness: { bg: "#4c566a", fg: "#b48ead" }
+  harness: { bg: "#4c566a", fg: "#b48ead" },
 };

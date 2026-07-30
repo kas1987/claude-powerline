@@ -38,10 +38,11 @@ export class GitService {
     command: string,
     options: { cwd: string; encoding: string; timeout: number },
   ): Promise<{ stdout: string }> {
-    return execAsync(command, {
+    const result = await execAsync(command, {
       ...options,
       env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
     });
+    return { stdout: result.stdout.toString() };
   }
 
   private async findGitRoot(workingDir: string): Promise<string | null> {

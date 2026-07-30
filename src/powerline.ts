@@ -1024,8 +1024,7 @@ export class PowerlineRenderer {
     convertHex: (hex: string, isBg: boolean) => string,
   ): Record<string, string> {
     const custom = this.config.colors?.custom as
-      | Record<string, { fg?: string }>
-      | undefined;
+      Record<string, { fg?: string }> | undefined;
     if (!custom) return {};
 
     const result: Record<string, string> = {};

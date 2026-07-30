@@ -29,6 +29,7 @@ function makeCustomTheme(overrides: Partial<ColorTheme> = {}): ColorTheme {
     context: { ...base },
     contextWarning: { ...base },
     contextCritical: { ...base },
+    contextDanger: { ...base },
     metrics: { ...base },
     version: { ...base },
     env: { ...base },
@@ -36,6 +37,11 @@ function makeCustomTheme(overrides: Partial<ColorTheme> = {}): ColorTheme {
     agent: { ...base },
     thinking: { ...base },
     cacheTimer: { ...base },
+    overhead: { ...base },
+    costWatch: { ...base },
+    costWatchWarning: { ...base },
+    costWatchCritical: { ...base },
+    harness: { ...base },
     ...overrides,
   };
 }
